@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Verify Python",
+			"type": "shell",
+			"command": "python -V",
+			"problemMatcher": [],
+			"group": "test"
+		}
+	]
+}
