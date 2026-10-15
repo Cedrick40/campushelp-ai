@@ -97,6 +97,73 @@ class RetrievalTests(unittest.TestCase):
         )
         self.assertLessEqual(len(results), 1)
 
+    
+    def test_missing_metadata_does_not_crash(self):
+        passages = [
+            {"text": "Students must complete registration."}
+        ]
+
+        results = retrieve_evidence(
+            "When must students complete registration?",
+            passages,
+        )
+
+        self.assertEqual(len(results), 1)
+        self.assertIn("text", results[0])
+
+    def test_top_k_never_exceeds_available_matches(self):
+        passages = [
+            {
+                "source_id": "REG-001",
+                "text": "Students must complete registration."
+            }
+        ]
+
+        results = retrieve_evidence(
+            "When must students complete registration?",
+            passages,
+            top_k=5,
+        )
+
+        self.assertLessEqual(len(results), 5)
+        self.assertEqual(len(results), 1)
+
+    def test_original_passage_metadata_is_preserved(self):
+        passage = {
+            "source_id": "REG-001",
+            "title": "Registration Guide",
+            "page": 4,
+            "section": "Deadlines",
+            "text": "Students must complete registration.",
+        }
+
+        results = retrieve_evidence(
+            "When must students complete registration?",
+            [passage],
+        )
+
+        self.assertEqual(results[0]["source_id"], "REG-001")
+        self.assertEqual(results[0]["title"], "Registration Guide")
+        self.assertEqual(results[0]["page"], 4)
+
+    def test_empty_passage_text_is_ignored(self):
+        passages = [
+            {"source_id": "EMPTY-001", "text": ""},
+            {
+                "source_id": "REG-001",
+                "text": "Students must complete registration."
+            },
+        ]
+
+        results = retrieve_evidence(
+            "When must students complete registration?",
+            passages,
+        )
+
+        self.assertTrue(results)
+        self.assertEqual(results[0]["source_id"], "REG-001")
+    
+
 
 if __name__ == "__main__":
     unittest.main()

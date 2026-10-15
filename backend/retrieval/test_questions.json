@@ -1,61 +1,27 @@
+
 [
   {
-    "id": "supported_001",
-    "category": "supported",
+    "id": "Q001",
+    "type": "supported",
     "question": "When must students complete registration?",
-    "passages": [
-      {
-        "source_id": "TEST-HANDBOOK-001",
-        "title": "Test Student Handbook",
-        "page": 3,
-        "section": "Registration",
-        "text": "Students must complete registration before the published deadline."
-      }
-    ],
-    "expected_behavior": "Answer using the passage and cite TEST-HANDBOOK-001."
+    "expected_behavior": "Answer using the registration evidence and cite its source."
   },
   {
-    "id": "unsupported_001",
-    "category": "unsupported",
-    "question": "What is the university principal's phone number?",
-    "passages": [],
-    "expected_behavior": "Explain that the available evidence does not establish the phone number."
+    "id": "Q002",
+    "type": "unsupported",
+    "question": "What is the university principal's personal phone number?",
+    "expected_behavior": "Do not invent an answer; explain that the available evidence does not contain it."
   },
   {
-    "id": "ambiguous_001",
-    "category": "ambiguous",
-    "question": "How much are the fees?",
-    "passages": [
-      {
-        "source_id": "TEST-FEES-001",
-        "title": "Test Fees Guide",
-        "page": 2,
-        "section": "Tuition",
-        "text": "Students should consult the approved fees schedule for their programme."
-      }
-    ],
-    "expected_behavior": "Ask which programme or academic year the student means, if needed."
+    "id": "Q003",
+    "type": "ambiguous",
+    "question": "When is the deadline?",
+    "expected_behavior": "Ask which deadline the student means if the evidence does not identify it clearly."
   },
   {
-    "id": "conflicting_001",
-    "category": "conflicting",
-    "question": "What is the registration deadline?",
-    "passages": [
-      {
-        "source_id": "TEST-CALENDAR-001",
-        "title": "Test Academic Calendar",
-        "page": 1,
-        "section": "Registration",
-        "text": "Registration closes on 10 January."
-      },
-      {
-        "source_id": "TEST-NOTICE-001",
-        "title": "Test Registration Notice",
-        "page": 1,
-        "section": "Registration",
-        "text": "Registration closes on 15 January."
-      }
-    ],
-    "expected_behavior": "Identify the conflicting dates and avoid choosing one without a justified source-priority rule."
+    "id": "Q004",
+    "type": "conflicting",
+    "question": "When is the registration deadline?",
+    "expected_behavior": "Identify the conflicting dates and their sources; do not silently choose one."
   }
 ]

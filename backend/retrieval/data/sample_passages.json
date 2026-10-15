@@ -1,0 +1,33 @@
+
+[
+  {
+    "source_id": "SAMPLE-REG-001",
+    "title": "Sample Student Registration Policy",
+    "text": "Students must complete registration before the published registration deadline.",
+    "url": "https://example.edu/policies/registration",
+    "page": 3,
+    "section": "Registration",
+    "version": "2026",
+    "document_date": "2026-01-10"
+  },
+  {
+    "source_id": "SAMPLE-FEES-001",
+    "title": "Sample Student Fees Guide",
+    "text": "Students should consult the approved fees schedule for tuition and programme charges.",
+    "url": "https://example.edu/policies/fees",
+    "page": 2,
+    "section": "Tuition and Fees",
+    "version": "2026",
+    "document_date": "2026-01-10"
+  },
+  {
+    "source_id": "SAMPLE-LIB-001",
+    "title": "Sample Library Guide",
+    "text": "Students may use the university library to access books and other learning resources.",
+    "url": "https://example.edu/services/library",
+    "page": 1,
+    "section": "Library Services",
+    "version": "2026",
+    "document_date": "2026-01-10"
+  }
+]
