@@ -1,5 +1,8 @@
 .env
+.env.*
+!.env.example
 .venv/
+/devpost/learner-profile.md
 __pycache__/
 node_modules/
 dist/
