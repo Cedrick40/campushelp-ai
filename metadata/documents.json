@@ -1,0 +1,67 @@
+[
+  {
+    "id": "cuz-001",
+    "title": "Student Payment and Registration Policy",
+    "institution": "Cavendish University Zambia",
+    "source_url": "https://www.cavendishza.org/policies/",
+    "publication_date": null,
+    "date_checked": "2026-10-20",
+    "status": "unknown",
+    "corpus_type": "official",
+    "document_type": "webpage",
+    "section_hint": "Student Payment and Registration Policy",
+    "local_path": null
+  },
+  {
+    "id": "cuz-002",
+    "title": "Student Charter",
+    "institution": "Cavendish University Zambia",
+    "source_url": "https://www.cavendishza.org/policies/",
+    "publication_date": null,
+    "date_checked": "2026-10-20",
+    "status": "unknown",
+    "corpus_type": "official",
+    "document_type": "webpage",
+    "section_hint": "Student Charter",
+    "local_path": null
+  },
+  {
+    "id": "cuz-003",
+    "title": "Code of Conduct and Disciplinary Procedures for Students",
+    "institution": "Cavendish University Zambia",
+    "source_url": "https://www.cavendishza.org/policies/",
+    "publication_date": null,
+    "date_checked": "2026-10-20",
+    "status": "unknown",
+    "corpus_type": "official",
+    "document_type": "webpage",
+    "section_hint": "Code of Conduct and Disciplinary Procedures for Students",
+    "local_path": null
+  },
+  {
+    "id": "cuz-004",
+    "title": "2026 Tuition Fee Schedule",
+    "institution": "Cavendish University Zambia",
+    "source_url": "https://www.cavendishza.org/tuition-fee-schedule/",
+    "publication_date": null,
+    "date_checked": "2026-10-20",
+    "status": "current",
+    "corpus_type": "official",
+    "document_type": "webpage",
+    "section_hint": "2026 Tuition Fee Schedule",
+    "local_path": null
+  },
+  {
+    "id": "cuz-005",
+    "title": "Student Registration Information",
+    "institution": "Cavendish University Zambia",
+    "source_url": "https://www.cavendishza.org/registration/",
+    "publication_date": null,
+    "date_checked": "2026-10-20",
+    "status": "unknown",
+    "corpus_type": "official",
+    "document_type": "webpage",
+    "section_hint": "Registration",
+    "local_path": null
+  }
+]
