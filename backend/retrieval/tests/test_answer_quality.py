@@ -9,101 +9,193 @@ class AnswerQualityTests(unittest.TestCase):
         self.evidence = [
             {
                 "source_id": "REG-001",
+                "title": "Registration Policy",
                 "text": "Registration closes on the published deadline.",
             },
             {
                 "source_id": "REG-002",
-                "text": "The registration schedule lists the relevant dates.",
+                "title": "Registration Notice",
+                "text": "The earlier notice set the deadline at 15 January 2026.",
             },
         ]
 
-    def test_supported_answer_requires_valid_citation(self):
+    def answered(self, **overrides):
         result = {
+            "status": "answered",
             "answer": "Registration closes on the published deadline.",
-            "status": "supported",
-            "citations": ["REG-001"],
+            "cited_source_ids": ["REG-001"],
+            "message": None,
         }
+        result.update(overrides)
+        return result
 
+    def test_supported_answer_with_valid_citation_passes(self):
+        result = self.answered()
         self.assertEqual(
             validate_answer_result(result, self.evidence),
             result,
         )
 
-    def test_unsupported_result_must_not_invent_answer(self):
-        result = {
-            "answer": "",
-            "status": "unsupported",
-            "citations": [],
-        }
-
-        self.assertEqual(
-            validate_answer_result(result, self.evidence),
-            result,
-        )
+    def test_answered_with_no_evidence_is_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_answer_result(self.answered(), [])
 
     def test_unknown_citation_is_rejected(self):
-        result = {
-            "answer": "Registration closes on the deadline.",
-            "status": "supported",
-            "citations": ["UNKNOWN-999"],
-        }
-
         with self.assertRaises(ValueError):
-            validate_answer_result(result, self.evidence)
+            validate_answer_result(
+                self.answered(cited_source_ids=["UNKNOWN-999"]),
+                self.evidence,
+            )
 
-    def test_supported_answer_requires_citation(self):
-        result = {
-            "answer": "Registration closes on the deadline.",
-            "status": "supported",
-            "citations": [],
-        }
-
+    def test_answered_without_citation_is_rejected(self):
         with self.assertRaises(ValueError):
-            validate_answer_result(result, self.evidence)
+            validate_answer_result(
+                self.answered(cited_source_ids=[]),
+                self.evidence,
+            )
 
-    def test_ambiguous_result_explains_clarification_needed(self):
+    def test_answered_with_blank_answer_is_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_answer_result(
+                self.answered(answer="   "),
+                self.evidence,
+            )
+
+    def test_answered_with_fallback_message_is_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_answer_result(
+                self.answered(message="I could not verify this."),
+                self.evidence,
+            )
+
+    def test_unsupported_result_never_carries_an_answer(self):
         result = {
-            "answer": "Do you mean registration or fee payment?",
-            "status": "ambiguous",
-            "citations": [],
+            "status": "insufficient_evidence",
+            "answer": None,
+            "cited_source_ids": [],
+            "message": "I could not verify this from the available documents.",
         }
-
         self.assertEqual(
             validate_answer_result(result, self.evidence),
             result,
         )
 
-    def test_conflicting_result_requires_two_sources(self):
-        result = {
-            "answer": "The supplied sources disagree about the deadline.",
-            "status": "conflicting",
-            "citations": ["REG-001", "REG-002"],
-        }
+    def test_unsupported_result_with_answer_is_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_answer_result(
+                {
+                    "status": "insufficient_evidence",
+                    "answer": "The deadline is 15 January.",
+                    "cited_source_ids": [],
+                    "message": "I could not verify this.",
+                },
+                self.evidence,
+            )
 
+    def test_unsupported_result_without_message_is_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_answer_result(
+                {
+                    "status": "insufficient_evidence",
+                    "answer": None,
+                    "cited_source_ids": [],
+                    "message": None,
+                },
+                self.evidence,
+            )
+
+    def test_ambiguous_question_abstains_with_a_clarifying_message(self):
+        result = {
+            "status": "insufficient_evidence",
+            "answer": None,
+            "cited_source_ids": [],
+            "message": "Which deadline do you mean — registration or fees?",
+        }
+        self.assertEqual(
+            validate_answer_result(result, self.evidence),
+            result,
+        )
+
+    def test_conflicting_result_requires_two_documents(self):
+        result = {
+            "status": "conflicting_sources",
+            "answer": "The sources disagree about the deadline.",
+            "cited_source_ids": ["REG-001", "REG-002"],
+            "message": "These sources disagree.",
+        }
         self.assertEqual(
             validate_answer_result(result, self.evidence),
             result,
         )
 
     def test_conflict_with_one_source_is_rejected(self):
-        result = {
-            "answer": "The sources disagree.",
-            "status": "conflicting",
-            "citations": ["REG-001"],
-        }
-
         with self.assertRaises(ValueError):
-            validate_answer_result(result, self.evidence)
+            validate_answer_result(
+                {
+                    "status": "conflicting_sources",
+                    "answer": "The sources disagree.",
+                    "cited_source_ids": ["REG-001"],
+                    "message": "These sources disagree.",
+                },
+                self.evidence,
+            )
+
+    def test_conflict_requires_two_retrieved_documents(self):
+        single_evidence = [self.evidence[0]]
+        with self.assertRaises(ValueError):
+            validate_answer_result(
+                {
+                    "status": "conflicting_sources",
+                    "answer": "The sources disagree.",
+                    "cited_source_ids": ["REG-001"],
+                    "message": "These sources disagree.",
+                },
+                single_evidence,
+            )
 
     def test_duplicate_citations_are_rejected(self):
-        result = {
-            "answer": "Registration closes on the deadline.",
-            "status": "supported",
-            "citations": ["REG-001", "REG-001"],
-        }
-
         with self.assertRaises(ValueError):
-            validate_answer_result(result, self.evidence)
+            validate_answer_result(
+                self.answered(cited_source_ids=["REG-001", "REG-001"]),
+                self.evidence,
+            )
+
+    def test_error_result_carries_only_a_message(self):
+        result = {
+            "status": "error",
+            "answer": None,
+            "cited_source_ids": [],
+            "message": "Something went wrong. Please try again.",
+        }
+        self.assertEqual(
+            validate_answer_result(result, self.evidence),
+            result,
+        )
+
+    def test_error_result_with_answer_is_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_answer_result(
+                {
+                    "status": "error",
+                    "answer": "Registration closes in January.",
+                    "cited_source_ids": [],
+                    "message": "Something went wrong.",
+                },
+                self.evidence,
+            )
+
+    def test_unknown_status_is_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_answer_result(
+                self.answered(status="supported"),
+                self.evidence,
+            )
+
+    def test_malformed_inputs_are_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_answer_result("not a dict", self.evidence)
+        with self.assertRaises(ValueError):
+            validate_answer_result(self.answered(), "not a list")
 
 
 if __name__ == "__main__":

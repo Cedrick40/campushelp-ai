@@ -8,7 +8,19 @@
     "page": 3,
     "section": "Registration",
     "version": "2026",
-    "document_date": "2026-01-10"
+    "document_date": "2026-01-10",
+    "status": "current"
+  },
+  {
+    "source_id": "SAMPLE-REG-002",
+    "title": "Sample Registration Notice (Superseded)",
+    "text": "The earlier registration notice set the registration deadline at 15 January 2026.",
+    "url": "https://example.edu/policies/registration-notice",
+    "page": 1,
+    "section": "Registration",
+    "version": "2025",
+    "document_date": "2025-08-01",
+    "status": "superseded"
   },
   {
     "source_id": "SAMPLE-FEES-001",
@@ -18,7 +30,8 @@
     "page": 2,
     "section": "Tuition and Fees",
     "version": "2026",
-    "document_date": "2026-01-10"
+    "document_date": "2026-01-10",
+    "status": "current"
   },
   {
     "source_id": "SAMPLE-LIB-001",
@@ -28,6 +41,7 @@
     "page": 1,
     "section": "Library Services",
     "version": "2026",
-    "document_date": "2026-01-10"
+    "document_date": "2026-01-10",
+    "status": "current"
   }
 ]

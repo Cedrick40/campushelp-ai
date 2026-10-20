@@ -4,24 +4,32 @@
     "id": "Q001",
     "type": "supported",
     "question": "When must students complete registration?",
+    "expected_status": "answered",
+    "expected_source_ids": ["SAMPLE-REG-001"],
     "expected_behavior": "Answer using the registration evidence and cite its source."
   },
   {
     "id": "Q002",
     "type": "unsupported",
     "question": "What is the university principal's personal phone number?",
-    "expected_behavior": "Do not invent an answer; explain that the available evidence does not contain it."
+    "expected_status": "insufficient_evidence",
+    "expected_source_ids": [],
+    "expected_behavior": "Do not invent an answer; return insufficient_evidence explaining that the available evidence does not contain it."
   },
   {
     "id": "Q003",
     "type": "ambiguous",
     "question": "When is the deadline?",
-    "expected_behavior": "Ask which deadline the student means if the evidence does not identify it clearly."
+    "expected_status": "insufficient_evidence",
+    "expected_source_ids": [],
+    "expected_behavior": "Abstain with a message asking which deadline the student means if the evidence does not identify it clearly."
   },
   {
     "id": "Q004",
     "type": "conflicting",
-    "question": "When is the registration deadline?",
-    "expected_behavior": "Identify the conflicting dates and their sources; do not silently choose one."
+    "question": "What is the registration deadline?",
+    "expected_status": "conflicting_sources",
+    "expected_source_ids": ["SAMPLE-REG-001", "SAMPLE-REG-002"],
+    "expected_behavior": "Return conflicting_sources citing both registration documents; do not silently choose one."
   }
 ]
