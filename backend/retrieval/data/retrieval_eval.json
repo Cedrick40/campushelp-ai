@@ -1,0 +1,49 @@
+
+[
+  {
+    "id": "EVAL-001",
+    "question": "What must students complete before the registration deadline?",
+    "expected_source_ids": ["SAMPLE-REG-001"]
+  },
+  {
+    "id": "EVAL-002",
+    "question": "Where can students find information about tuition charges?",
+    "expected_source_ids": ["SAMPLE-FEES-001"]
+  },
+  {
+    "id": "EVAL-003",
+    "question": "Where can students access books and learning resources?",
+    "expected_source_ids": ["SAMPLE-LIB-001"]
+  },
+  {
+    "id": "EVAL-004",
+    "question": "xyzqv blorpt",
+    "expected_source_ids": []
+  },
+  {
+    "id": "EVAL-005",
+    "question": "What does the registration policy require?",
+    "expected_source_ids": ["SAMPLE-REG-001"]
+  },
+  {
+    "id": "EVAL-006",
+    "question": "Which document explains programme fees?",
+    "expected_source_ids": ["SAMPLE-FEES-001"]
+  },
+  {
+    "id": "EVAL-007",
+    "question": "Where are books available for students?",
+    "expected_source_ids": ["SAMPLE-LIB-001"]
+  },
+  {
+    "id": "EVAL-008",
+    "question": "What is the university's examination timetable?",
+    "expected_source_ids": []
+  },
+  {
+  "id": "EVAL-009",
+  "question": "What is the registration fee deadline?",
+  "expected_source_ids": []
+}
+
+]
