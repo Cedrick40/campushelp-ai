@@ -1,4 +1,9 @@
 from django.urls import path
-from .views import ask
 
-urlpatterns = [path("ask/", ask)]
+from . import views
+
+urlpatterns = [
+    path("ask/", views.ask),
+    path("corpus/", views.corpus),
+    path("documents/<int:pk>/file/", views.document_file),
+]
