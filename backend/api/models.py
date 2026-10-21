@@ -13,6 +13,7 @@ class Document(models.Model):
         SAMPLE = "sample", "Sample data"
         OFFICIAL = "official", "Official documents"
 
+    external_id = models.CharField(max_length=50, blank=True)
     title = models.CharField(max_length=300)
     issuer = models.CharField(max_length=200, blank=True)
     source_url = models.URLField(max_length=500, blank=True)

@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            sql="CREATE VIRTUAL TABLE passage_fts USING fts5(text, content='api_passage', content_rowid='id');",
-            reverse_sql="DROP TABLE IF EXISTS passage_fts;",
+            sql="CREATE VIRTUAL TABLE api_passage_fts USING fts5(text, content='api_passage', content_rowid='id');",
+            reverse_sql="DROP TABLE IF EXISTS api_passage_fts;",
         ),
     ]
