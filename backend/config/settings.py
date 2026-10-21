@@ -137,3 +137,16 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Ask questions about university information and get answers with sources.",
     "VERSION": "0.1.0",
 }
+
+
+
+# --- Environment overrides (read from backend/.env) ---
+import os
+from dotenv import load_dotenv
+
+load_dotenv(BASE_DIR / ".env")
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-only-change-me")
+DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
+CORS_ALLOWED_ORIGINS = [os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173")]
+DOCUMENTS_DIR = BASE_DIR.parent / "documents"
