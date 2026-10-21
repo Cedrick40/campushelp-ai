@@ -18,7 +18,39 @@ npm run dev               # http://localhost:5173
 ```
 
 Other commands: `npm run build` (production build into `dist/`), `npm run lint`,
-`npm run preview` (serve the built output).
+`npm run preview` (serve the built output), `npm run verify` (see below).
+
+## Checking that it works
+
+```bash
+cd frontend
+npm run verify
+```
+
+`npm run verify` runs the linter, the production build, and then a set of
+checks that exercise the real code in `src/`:
+
+- **Contract checks** — `src/api.js` is loaded and asked for answers in mock
+  mode, against a running backend, and against a backend that is not there.
+  This covers all four response types, the empty-question and 500-character
+  rules, relative source links and malformed responses.
+- **Browser checks** — the page is opened in headless Chrome and driven the
+  way a student would drive it: submit a question, click the examples, read
+  the answer, break the input. Every state is checked, including that no
+  uncaught error reaches the page.
+
+Every check is reported as PASS, FAIL or SKIP, and the command exits non-zero
+if anything failed. A check is only skipped when it cannot apply (no Chrome
+installed, or the backend is not running) and the reason is printed.
+
+The live browser checks run on the origin the backend allows
+(`FRONTEND_ORIGIN` in `backend/.env`, by default `http://localhost:5173`),
+because the browser blocks calls from any other origin. If a dev server is
+already running on that port in mock mode, those checks are skipped with a
+message rather than failing.
+
+Browser checks need Chrome or Chromium. They are skipped when no browser is
+found; everything else still runs.
 
 ## Configuration
 
