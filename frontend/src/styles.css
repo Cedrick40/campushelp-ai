@@ -1,0 +1,469 @@
+/*
+ * CampusHelp AI — plain CSS, no UI framework.
+ *
+ * Look and feel (devpost/prd.md > Look and Feel): a calm reference page.
+ * Mostly white and light grey with one deep blue for the button, links and
+ * focus outlines. Small rounded corners, generous spacing, mobile-first.
+ * No crest, no sparkle icons, no chat bubbles, no gradients, no animation.
+ */
+
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-muted: #f2f4f7;
+  --text: #1f2933;
+  --text-muted: #5b6672;
+  --border: #e1e5ea;
+  --border-strong: #cbd2da;
+  --accent: #1d4ed8;
+  --accent-strong: #1e40af;
+  --accent-wash: #f4f7ff;
+  --danger: #a12a2a;
+  --radius: 8px;
+  --radius-small: 6px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, 'Noto Sans', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------- Banner ---------- */
+
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-muted);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.banner__label {
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.banner--official {
+  background: var(--accent-wash);
+  border-bottom-color: var(--border-strong);
+}
+
+.banner--unknown {
+  background: var(--surface-muted);
+}
+
+/* ---------- Layout ---------- */
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 16px 48px;
+}
+
+.intro {
+  margin-bottom: 24px;
+}
+
+.intro__title {
+  margin: 0 0 6px;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.intro__subtitle {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* ---------- Question box ---------- */
+
+.ask {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+}
+
+.ask__heading {
+  margin: 0 0 14px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ask__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.ask__input {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  padding: 12px;
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-small);
+  resize: vertical;
+}
+
+.ask__input:focus {
+  border-color: var(--accent);
+}
+
+.ask__input:disabled {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+.ask__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ask__submit {
+  padding: 10px 22px;
+  font: inherit;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-small);
+  cursor: pointer;
+}
+
+.ask__submit:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.ask__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ask__count {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.ask__count--over {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.ask__hint {
+  margin: 10px 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.ask__error {
+  margin: 10px 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--danger);
+}
+
+/* ---------- Examples ---------- */
+
+.examples {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.examples__heading {
+  margin: 0 0 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.examples__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.examples__button {
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-small);
+  cursor: pointer;
+  text-align: left;
+}
+
+.examples__button:hover:not(:disabled) {
+  background: var(--accent-wash);
+  border-color: var(--accent);
+}
+
+.examples__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---------- Answer area ---------- */
+
+.answer {
+  margin-top: 20px;
+  padding: 20px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.answer__placeholder {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.answer__status {
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.answer--answered .answer__status {
+  color: var(--accent);
+}
+
+.answer--failed .answer__status {
+  color: var(--danger);
+}
+
+.answer--unverified {
+  background: var(--surface-muted);
+  border-left: 3px solid var(--border-strong);
+}
+
+.answer--failed {
+  border-left: 3px solid var(--danger);
+}
+
+.answer--conflict {
+  border-left: 3px solid var(--accent);
+}
+
+.answer__message {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.answer__detail {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.answer__contact {
+  margin: 10px 0 0;
+  font-size: 0.9375rem;
+}
+
+.answer__text {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.answer__retry {
+  margin-top: 14px;
+  padding: 8px 18px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-small);
+  cursor: pointer;
+}
+
+.answer__retry:hover {
+  background: var(--accent-wash);
+}
+
+.answer__sourcesHeading {
+  margin: 20px 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ---------- Sources ---------- */
+
+.sources {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.source {
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-small);
+}
+
+.source__title {
+  margin: 0 0 8px;
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+
+.source__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.source__metaRow {
+  display: flex;
+  gap: 6px;
+}
+
+.source__meta dt {
+  color: var(--text-muted);
+}
+
+.source__meta dt::after {
+  content: ':';
+}
+
+.source__meta dd {
+  margin: 0;
+}
+
+.source__excerpt {
+  margin: 12px 0 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--border-strong);
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.source__link {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.source__link:hover {
+  color: var(--accent-strong);
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 16px;
+  text-align: center;
+}
+
+.footer__text,
+.footer__mock {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.footer__mock {
+  margin-top: 4px;
+  font-weight: 600;
+  color: var(--danger);
+}
+
+/* ---------- Wider screens ---------- */
+
+@media (min-width: 640px) {
+  .main {
+    padding: 40px 24px 64px;
+  }
+
+  .ask,
+  .answer {
+    padding: 24px;
+  }
+
+  .sources {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  /* Conflicting sources sit side by side on wide screens. */
+  .sources--conflict {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

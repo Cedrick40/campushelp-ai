@@ -1,0 +1,110 @@
+# CampusHelp AI — Frontend
+
+The student-facing page: ask a question, get an answer with the document it
+came from, or an honest notice when it cannot be verified.
+
+Stack: React 19 + Vite, plain JavaScript, plain CSS, `fetch()`.
+
+Contract, look and feel, and component responsibilities are defined in
+`../devpost/spec.md` and `../devpost/prd.md`.
+
+## Setup
+
+```bash
+cd frontend
+npm install
+cp .env.example .env      # then set VITE_API_BASE_URL
+npm run dev               # http://localhost:5173
+```
+
+Other commands: `npm run build` (production build into `dist/`), `npm run lint`,
+`npm run preview` (serve the built output).
+
+## Configuration
+
+All configuration is environment based, so nothing machine-specific is
+committed. `.env` is gitignored; `.env.example` is the template.
+
+| Variable | Meaning | Default |
+|---|---|---|
+| `VITE_API_BASE_URL` | Backend origin, e.g. `http://localhost:8000` | `""` (same origin) |
+| `VITE_USE_MOCK` | `true` = answer from the local mock, `false` = call the backend | `false` |
+| `VITE_REQUEST_TIMEOUT_MS` | Request timeout in milliseconds | `30000` |
+
+The backend address lives in `VITE_API_BASE_URL` rather than in the source so
+that the same build can point at a laptop, a teammate's machine or a deployed
+host without a code change.
+
+## Mock first, real API second
+
+The interface was built against a mock before the backend existed, and the
+mock is still available for working on the UI without the server running.
+
+**1. Mock mode (no backend needed)**
+
+```bash
+# frontend/.env
+VITE_USE_MOCK=true
+```
+
+`src/mockApi.js` answers with exactly the payload shapes the real API
+returns, so every screen and state can be built and reviewed on its own. The
+mock covers all four responses: answered, insufficient evidence, conflicting
+sources, and a service failure. The footer shows "Mock data — the backend is
+not connected." so mock content can never be mistaken for a real answer.
+
+**2. Real API mode**
+
+```bash
+# frontend/.env
+VITE_USE_MOCK=false
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+Nothing else changes: `src/api.js` picks the transport, the components stay
+the same. The backend must be running and must allow this origin —
+`FRONTEND_ORIGIN=http://localhost:5173` in `backend/.env`.
+
+## API
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/ask/` | Ask a question, get an answer with sources |
+| `GET /api/corpus/` | Banner data: corpus type, university, last checked |
+| `GET /api/documents/<id>/file/` | Serves a sample document; used as the `url` of sample sources |
+
+Request and response shapes are in `../devpost/spec.md` under
+*API — `POST /api/ask/`*. `src/api.js` normalises every response into one
+internal shape, so the components never have to deal with missing optional
+fields (a source without a date, an excerpt or a link still renders).
+
+## Layout
+
+```
+src/
+├── App.jsx                 page layout: banner, title, question box, answer area, footer
+├── api.js                  fetch wrappers, response normalisation, error handling
+├── mockApi.js              mock backend used when VITE_USE_MOCK=true
+├── format.js               date formatting
+├── styles.css              all styling, no UI framework
+└── components/
+    ├── Banner.jsx          sample-data vs official-documents notice
+    ├── QuestionBox.jsx     input, submit, examples, validation, loading
+    ├── AnswerArea.jsx      answer | fallback | conflict | failure
+    └── SourceCard.jsx      title, section, date, page, excerpt, link
+```
+
+## Behaviour notes
+
+- Empty or whitespace-only questions are rejected before any request is sent.
+- Questions are limited to 500 characters, checked on the client and again by
+  the backend.
+- Example questions fill the box and submit immediately; the third one is the
+  question the documents do not cover, so the honest fallback is one click.
+- Every state carries a written label ("Answer", "Not verified", "Sources
+  disagree", "Request failed"), so the states never depend on colour alone.
+- Source links that come back as paths (for example
+  `/api/documents/12/file/`) get the backend origin prepended so they stay
+  clickable.
+- Requests time out after `VITE_REQUEST_TIMEOUT_MS` and turn into a retry
+  message instead of hanging.
