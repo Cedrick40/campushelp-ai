@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="CampusHelp AI">
+  <rect width="32" height="32" rx="6" fill="#1d4ed8" />
+  <path
+    d="M11 8h7.5L23 12.5V23a1 1 0 0 1-1 1H11a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="2"
+    stroke-linejoin="round"
+  />
+  <path d="M18 8v5h5" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" />
+</svg>
