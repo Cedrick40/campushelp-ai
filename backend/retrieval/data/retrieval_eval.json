@@ -1,0 +1,112 @@
+
+[
+  {
+    "id": "EVAL-001",
+    "type": "answerable",
+    "question": "What must students complete before the registration deadline?",
+    "expected_source_ids": ["SAMPLE-REG-001"],
+    "expected_status": "answered"
+  },
+  {
+    "id": "EVAL-002",
+    "type": "answerable",
+    "question": "Where can students find information about tuition charges?",
+    "expected_source_ids": ["SAMPLE-FEES-001"],
+    "expected_status": "answered"
+  },
+  {
+    "id": "EVAL-003",
+    "type": "answerable",
+    "question": "Where can students access books and learning resources?",
+    "expected_source_ids": ["SAMPLE-LIB-001"],
+    "expected_status": "answered"
+  },
+  {
+    "id": "EVAL-004",
+    "type": "unsupported",
+    "question": "xyzqv blorpt",
+    "expected_source_ids": [],
+    "expected_status": "insufficient_evidence"
+  },
+  {
+    "id": "EVAL-005",
+    "type": "answerable",
+    "question": "What does the registration policy require?",
+    "expected_source_ids": ["SAMPLE-REG-001"],
+    "expected_status": "answered"
+  },
+  {
+    "id": "EVAL-006",
+    "type": "answerable",
+    "question": "Which document explains programme fees?",
+    "expected_source_ids": ["SAMPLE-FEES-001"],
+    "expected_status": "answered"
+  },
+  {
+    "id": "EVAL-007",
+    "type": "answerable",
+    "question": "Where are books available for students?",
+    "expected_source_ids": ["SAMPLE-LIB-001"],
+    "expected_status": "answered"
+  },
+  {
+    "id": "EVAL-008",
+    "type": "unsupported",
+    "question": "What is the university's examination timetable?",
+    "expected_source_ids": [],
+    "expected_status": "insufficient_evidence"
+  },
+  {
+    "id": "EVAL-009",
+    "type": "unsupported",
+    "question": "What is the registration fee deadline?",
+    "expected_source_ids": [],
+    "expected_status": "insufficient_evidence",
+    "note": "Retrieval may surface registration passages; generation must abstain (layer 2)."
+  },
+  {
+    "id": "EVAL-010",
+    "type": "reworded",
+    "question": "What must be finished before registration closes?",
+    "expected_source_ids": ["SAMPLE-REG-001"],
+    "expected_status": "answered"
+  },
+  {
+    "id": "EVAL-011",
+    "type": "reworded",
+    "question": "Where do I find the tuition fees schedule?",
+    "expected_source_ids": ["SAMPLE-FEES-001"],
+    "expected_status": "answered"
+  },
+  {
+    "id": "EVAL-012",
+    "type": "ambiguous",
+    "question": "When is the deadline?",
+    "expected_source_ids": [],
+    "expected_status": "insufficient_evidence",
+    "note": "Ambiguous questions abstain with a clarifying message under the insufficient_evidence status."
+  },
+  {
+    "id": "EVAL-013",
+    "type": "conflicting",
+    "question": "What is the registration deadline?",
+    "expected_source_ids": ["SAMPLE-REG-001", "SAMPLE-REG-002"],
+    "expected_status": "conflicting_sources"
+  },
+  {
+    "id": "EVAL-014",
+    "type": "unsupported",
+    "question": "What is the cafeteria menu today?",
+    "expected_source_ids": [],
+    "expected_status": "insufficient_evidence"
+  },
+  {
+    "id": "EVAL-015",
+    "type": "reworded",
+    "question": "How late can I enrol before the cut-off date?",
+    "expected_source_ids": ["SAMPLE-REG-001"],
+    "expected_status": "answered",
+    "known_limitation": true,
+    "note": "Shares no keywords with the registration passages — the keyword-search tradeoff recorded in spec.md."
+  }
+]
