@@ -78,9 +78,9 @@ export default function App() {
       <Banner corpus={corpus} />
 
       <main className="main">
-        <header className="intro">
-          <h1 className="intro__title">CampusHelp AI</h1>
-          <p className="intro__subtitle">
+        <header className="masthead">
+          <h1 className="masthead__title">CampusHelp AI</h1>
+          <p className="masthead__subtitle">
             Ask a question about university rules and get an answer with its
             source.
           </p>

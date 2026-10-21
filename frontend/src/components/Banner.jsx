@@ -1,3 +1,4 @@
+import { InfoIcon, SampleIcon, CheckIcon } from './icons.jsx'
 import { formatDate } from '../format.js'
 
 /**
@@ -11,6 +12,9 @@ export default function Banner({ corpus }) {
   if (!corpus) {
     return (
       <div className="banner banner--unknown" role="status">
+        <span className="banner__icon">
+          <InfoIcon size={15} />
+        </span>
         <span className="banner__label">Source status</span>
         <span className="banner__text">
           The information source status is unavailable right now. Answers may be
@@ -24,6 +28,9 @@ export default function Banner({ corpus }) {
     const lastChecked = formatDate(corpus.lastChecked)
     return (
       <div className="banner banner--official" role="status">
+        <span className="banner__icon">
+          <CheckIcon size={15} />
+        </span>
         <span className="banner__label">Official documents</span>
         <span className="banner__text">
           Based on official documents from {corpus.university ?? 'the university'}
@@ -35,9 +42,12 @@ export default function Banner({ corpus }) {
 
   return (
     <div className="banner banner--sample" role="status">
+      <span className="banner__icon">
+        <SampleIcon size={15} />
+      </span>
       <span className="banner__label">Sample data</span>
       <span className="banner__text">
-        Sample data, not official university documents.
+        Answers below use example documents, not official university documents.
       </span>
     </div>
   )

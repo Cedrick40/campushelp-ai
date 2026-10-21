@@ -231,7 +231,7 @@ async function browserChecksMock(driver) {
   await new Promise((resolve) => setTimeout(resolve, 500))
 
   check('page title', (await driver.evaluate('document.title')) === 'CampusHelp AI')
-  check('heading rendered', (await driver.evaluate(driver.text('.intro__title'))) === 'CampusHelp AI')
+  check('heading rendered', (await driver.evaluate(driver.text('.masthead__title'))) === 'CampusHelp AI')
   check('banner rendered', (await driver.evaluate(driver.text('.banner'))).length > 0)
   check(
     'three example questions',
