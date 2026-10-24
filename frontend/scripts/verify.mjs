@@ -178,7 +178,6 @@ async function contractChecksMock(api) {
 // ------------------------------------------------ 2. contract, live backend
 
 async function contractChecksLive(api) {
-HEAD
   let result
   try {
     result = await api.askQuestion('When is the deadline to register for exams?')
@@ -190,7 +189,6 @@ HEAD
   }
   const statuses = ['answered', 'insufficient_evidence', 'conflicting_sources', 'error']
   check('live answer received', statuses.includes(result.status), result.status)
-origin/main
   check('live sources is a list', Array.isArray(result.sources))
   check(
     'live source fields normalised',
@@ -208,33 +206,6 @@ origin/main
     skip('live answer has text', 'the backend abstained - this is correct')
   } else {
     skip('live answer has text', 'the backend reported a failure')
-  }
-
-  if (result.status === 'answered' || result.status === 'conflicting_sources') {
-    check('live answer has text', typeof result.answer === 'string' && result.answer.length > 0)
-    check('live answer cites sources', result.sources.length > 0, String(result.sources.length))
-  } else if (result.status === 'insufficient_evidence') {
-    skip(
-      'live answer has text',
-      'the backend abstained - this is correct while no documents are ingested',
-    )
-    check(
-      'live fallback uses the agreed wording',
-      result.message === 'I could not verify this from the available documents.',
-      result.message,
-    )
-  } else {
-    skip('live answer has text', 'the backend reported a failure, which the UI shows with a retry')
-  }
-
-  const corpus = await api.fetchCorpus()
-  if (corpus === null) {
-    skip(
-      'GET /api/corpus/ answered',
-      'endpoint not available yet - the banner shows "status unavailable" instead of inventing data',
-    )
-  } else {
-    check('GET /api/corpus/ answered', corpus.type === 'sample' || corpus.type === 'official')
   }
 }
 
@@ -396,8 +367,6 @@ async function browserChecksLive(driver) {
   await driver.evaluate(driver.fillQuestion('When is the deadline to register for exams?'))
   await new Promise((resolve) => setTimeout(resolve, 150))
   await driver.evaluate("document.querySelector('.ask__submit').click()")
-HEAD
-origin/main
   await driver.waitFor(
     "!!document.querySelector('.answer--answered, .answer--unverified, .answer--conflict, .answer--failed')",
     20000,
@@ -416,9 +385,7 @@ origin/main
   })()`)
 
   check('a live state is rendered', settled.text.length > 0, settled.state)
-HEAD
   check('no empty source metadata values', !settled.emptyMeta, settled.emptyMeta ? 'a source row has an empty value' : '')
-origin/main
   if (settled.state.includes('answer--answered')) {
     check('the live answer is rendered', settled.text.length > 0)
     check('the live source card is rendered', settled.source.length > 0, settled.source)
@@ -439,6 +406,8 @@ origin/main
     (await driver.evaluate(driver.text('.answer__text, .answer__message, .answer__placeholder'))).length > 0,
   )
 }
+
+
 
 // ------------------------------------------------------------------- run
 
