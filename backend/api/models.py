@@ -2,63 +2,52 @@ from django.db import models
 
 
 class Document(models.Model):
-    """One source file (a handbook, a calendar, a regulation...)."""
-
-    class Status(models.TextChoices):
-        CURRENT = "current", "Current"
-        SUPERSEDED = "superseded", "Superseded"
-        UNKNOWN = "unknown", "Unknown"
-
-    class CorpusType(models.TextChoices):
-        SAMPLE = "sample", "Sample data"
-        OFFICIAL = "official", "Official documents"
-
-    external_id = models.CharField(max_length=50, blank=True)
-    title = models.CharField(max_length=300)
-    issuer = models.CharField(max_length=200, blank=True)
-    source_url = models.URLField(max_length=500, blank=True)
+    id = models.CharField(primary_key=True, max_length=255)
+    title = models.CharField(max_length=255)
+    institution = models.CharField(max_length=255, blank=True, default="")
+    source_url = models.URLField(blank=True, default="")
     publication_date = models.DateField(null=True, blank=True)
-    checked_date = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.UNKNOWN)
-    corpus_type = models.CharField(max_length=10, choices=CorpusType.choices, default=CorpusType.SAMPLE)
-    file_path = models.CharField(max_length=500)
-    extraction_notes = models.TextField(blank=True)
+    date_checked = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=50, default="unknown")
+    corpus_type = models.CharField(max_length=20, default="sample")
+    document_type = models.CharField(max_length=50, default="text")
+    section_hint = models.CharField(max_length=255, blank=True, default="")
+    file_path = models.CharField(max_length=500, blank=True, default="")
+    extraction_notes = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["title"]
 
     def __str__(self):
         return self.title
 
 
 class Passage(models.Model):
-    """A searchable piece of a document."""
-
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="passages")
-    section = models.CharField(max_length=300, blank=True)
-    page = models.PositiveIntegerField(null=True, blank=True)
-    position = models.PositiveIntegerField()
+    source_id = models.CharField(max_length=255, unique=True, blank=True, default="")
+    section = models.CharField(max_length=255, blank=True, default="")
+    page = models.IntegerField(null=True, blank=True)
+    position = models.IntegerField(default=0)
     text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["document_id", "position"]
 
     def __str__(self):
-        return f"{self.document.title} #{self.position}"
+        return self.source_id or f"Passage {self.id}"
 
 
 class CorpusConfig(models.Model):
-    """Exactly one row: the banner data and the optional office line."""
-
-    corpus_type = models.CharField(max_length=10, choices=Document.CorpusType.choices,
-                                   default=Document.CorpusType.SAMPLE)
-    university = models.CharField(max_length=200, default="Placeholder University")
+    corpus_type = models.CharField(max_length=20, choices=[("sample", "sample"), ("official", "official")], default="sample")
+    university = models.CharField(max_length=255, default="CampusHelp Demo")
     last_checked = models.DateField(null=True, blank=True)
-    contact_office = models.CharField(max_length=200, blank=True)
-    contact_source = models.CharField(max_length=300, blank=True)
+    contact_office = models.CharField(max_length=255, blank=True, default="")
+    contact_source = models.URLField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self, *args, **kwargs):
-        self.pk = 1
-        super().save(*args, **kwargs)
-
-    @classmethod
-    def load(cls):
-        obj, _ = cls.objects.get_or_create(pk=1)
-        return obj
+    def __str__(self):
+        return f"{self.corpus_type} corpus for {self.university}"
