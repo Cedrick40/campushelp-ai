@@ -1,0 +1,22 @@
+{
+  "corpus": {
+    "type": "sample",
+    "university": "Example University",
+    "last_checked": "2026-10-20",
+    "contact_line": {
+      "office": "Registrar's Office",
+      "source": "Official contacts page, https://example.edu/contact"
+    }
+  },
+  "documents": [
+    {
+      "file": "academic-calendar.pdf",
+      "title": "Academic Calendar 2026",
+      "issuer": "Registrar's Office",
+      "url": "https://example.edu/calendar.pdf",
+      "publication_date": "2026-01-15",
+      "checked_date": "2026-10-20",
+      "status": "current"
+    }
+  ]
+}
