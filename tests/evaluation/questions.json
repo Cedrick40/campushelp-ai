@@ -1,0 +1,4 @@
+{
+  "_format": "Each question needs: id, category (answerable | reworded | ambiguous | unsupported | conflicting), question, expected_status (answered | insufficient_evidence | conflicting_sources). Optional: expected_sources, a list of document titles (or parts of titles) that the answer must cite. Aim for 15-30 questions written against the REAL documents once they are ingested.",
+  "questions": []
+}
