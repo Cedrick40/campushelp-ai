@@ -262,3 +262,16 @@ Boundaries that matter: frontend never talks to retrieval or the provider — on
 - **Target university name, document set, sample-vs-official** — Person 1's; placeholder wording in banner/footer until then (`prd.md > Open Questions`).
 - **Whether .docx support is actually needed** — depends on Person 1's files; add `python-docx` only if so.
 - **FTS5 availability on the build machine** — verify first day; fallback is a `LIKE`-based `retrieve()` with the identical signature.
+
+
+## Build Notes (Person 3, 24 October 2026)
+
+Changes made while building, so this spec matches the code:
+
+- Source cards also carry `checked_date` (always present, may be null): the Cavendish documents have no publication dates, so `date` may be null.
+- The search table is `api_passage_fts` (FTS5, external content over `api_passage.text`), kept in step by database triggers, so writers never need to rebuild it. `rebuild_search_index()` remains for manual repair.
+- `Document` has an `external_id` field holding the team's readable id (for example `cuz-001`).
+- Identifiers: `source_id = str(Passage.id)` and `document_id = str(Document.id)`. They are always strings in the evidence passed between retrieval, generation and validation.
+- `contact_line` is returned only on `insufficient_evidence` responses, and is null when no office was supplied.
+- Document source records live in `metadata/` (Person 1's `documents.json`); the banner data and `contact_line` are planned for `metadata/corpus.json`, to be confirmed with Person 1.
+- The evaluation set is `tests/evaluation/questions.json`, run by `python manage.py run_evaluation` (`--retrieval-only` needs no AI key).

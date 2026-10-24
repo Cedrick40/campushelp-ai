@@ -49,10 +49,16 @@ def _validation_message(serializer):
 
 
 def _source_cards(cited_ids, evidence):
-    by_id = {str(p["source_id"]): p for p in evidence}
+    by_id = {
+        str(p["source_id"]): p
+        for p in evidence
+        if isinstance(p, dict) and p.get("source_id") is not None
+    }
     cards = []
     for source_id in cited_ids:
-        passage = by_id[source_id]
+        passage = by_id.get(source_id)
+        if passage is None:
+            continue
         card = {
             "title": passage.get("title") or "Untitled document",
             "url": passage.get("url") or "",
@@ -65,7 +71,6 @@ def _source_cards(cited_ids, evidence):
             card["page"] = passage["page"]
         cards.append(card)
     return cards
-
 
 @extend_schema(
     request=AskRequestSerializer,
