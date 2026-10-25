@@ -146,7 +146,7 @@ class DocumentFileTests(TestCase):
         self.addCleanup(self.tmp.cleanup)
 
     def test_serves_a_recorded_file(self):
-        doc = Document.objects.create(title="P", file_path="documents/policy.md")
+        doc = Document.objects.create(id="doc-p", title="P", file_path="documents/policy.md")
         with override_settings(DOCUMENTS_DIR=self.root):
             r = self.client.get(f"/api/documents/{doc.id}/file/")
             body = b"".join(r.streaming_content).decode()
@@ -159,6 +159,6 @@ class DocumentFileTests(TestCase):
             self.assertEqual(self.client.get("/api/documents/999/file/").status_code, 404)
 
     def test_paths_outside_documents_are_refused(self):
-        doc = Document.objects.create(title="Bad", file_path="../secret.txt")
+        doc = Document.objects.create(id="doc-bad", title="Bad", file_path="../secret.txt")
         with override_settings(DOCUMENTS_DIR=self.root):
             self.assertEqual(self.client.get(f"/api/documents/{doc.id}/file/").status_code, 404)
