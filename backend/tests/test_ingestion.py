@@ -17,7 +17,7 @@ class IngestionMetadataTests(unittest.TestCase):
         normalized = build_corpus_records(records)
         self.assertEqual(len(normalized), len(records))
         self.assertEqual(normalized[0]["title"], "Student Payment and Registration Policy")
-        self.assertEqual(normalized[0]["status"], "unknown")
+        self.assertEqual(normalized[0]["status"], "current")
 
 
 if __name__ == "__main__":

@@ -6,11 +6,11 @@
     "source_url": "https://www.cavendishza.org/policies/",
     "publication_date": null,
     "date_checked": "2026-10-20",
-    "status": "unknown",
+    "status": "current",
     "corpus_type": "official",
-    "document_type": "webpage",
+    "document_type": "pdf",
     "section_hint": "Student Payment and Registration Policy",
-    "local_path": null
+    "local_path": "Student_Payment_and_Registration_Policy.pdf"
   },
   {
     "id": "cuz-002",
@@ -19,11 +19,11 @@
     "source_url": "https://www.cavendishza.org/policies/",
     "publication_date": null,
     "date_checked": "2026-10-20",
-    "status": "unknown",
+    "status": "current",
     "corpus_type": "official",
-    "document_type": "webpage",
+    "document_type": "pdf",
     "section_hint": "Student Charter",
-    "local_path": null
+    "local_path": "CUZ_Student_Charter.pdf"
   },
   {
     "id": "cuz-003",
@@ -32,36 +32,49 @@
     "source_url": "https://www.cavendishza.org/policies/",
     "publication_date": null,
     "date_checked": "2026-10-20",
-    "status": "unknown",
+    "status": "current",
     "corpus_type": "official",
-    "document_type": "webpage",
+    "document_type": "pdf",
     "section_hint": "Code of Conduct and Disciplinary Procedures for Students",
-    "local_path": null
+    "local_path": "CUZ_Code_of_Conduct.pdf"
   },
   {
     "id": "cuz-004",
-    "title": "2026 Tuition Fee Schedule",
+    "title": "Academic Policy",
     "institution": "Cavendish University Zambia",
-    "source_url": "https://www.cavendishza.org/tuition-fee-schedule/",
+    "source_url": "https://www.cavendishza.org/policies/",
     "publication_date": null,
     "date_checked": "2026-10-20",
     "status": "current",
     "corpus_type": "official",
-    "document_type": "webpage",
-    "section_hint": "2026 Tuition Fee Schedule",
-    "local_path": null
+    "document_type": "pdf",
+    "section_hint": "Academic Policy",
+    "local_path": "CUZ_Academic_Policy.pdf"
   },
   {
     "id": "cuz-005",
-    "title": "Student Registration Information",
+    "title": "Complaints Policy",
     "institution": "Cavendish University Zambia",
-    "source_url": "https://www.cavendishza.org/registration/",
+    "source_url": "https://www.cavendishza.org/policies/",
     "publication_date": null,
     "date_checked": "2026-10-20",
-    "status": "unknown",
+    "status": "current",
     "corpus_type": "official",
-    "document_type": "webpage",
-    "section_hint": "Registration",
-    "local_path": null
+    "document_type": "pdf",
+    "section_hint": "Complaints Policy",
+    "local_path": "CUZ_Complaints_Policy.pdf"
+  },
+  {
+    "id": "cuz-006",
+    "title": "Rewards Policy",
+    "institution": "Cavendish University Zambia",
+    "source_url": "https://www.cavendishza.org/policies/",
+    "publication_date": null,
+    "date_checked": "2026-10-20",
+    "status": "current",
+    "corpus_type": "official",
+    "document_type": "pdf",
+    "section_hint": "Rewards Policy",
+    "local_path": "CUZ_Rewards_Policy.pdf"
   }
 ]

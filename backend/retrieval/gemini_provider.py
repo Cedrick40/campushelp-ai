@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 
 
-DEFAULT_MODEL = "gemini-3.8-flash"
+DEFAULT_MODEL = "gemini-3.6-flash"
 REQUEST_TIMEOUT_MS = int(os.environ.get("AI_TIMEOUT_MS") or 120_000)
 
 # The Gemini Developer API free tier returns 429 (and occasionally 5xx) under

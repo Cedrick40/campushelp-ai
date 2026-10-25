@@ -119,6 +119,7 @@ def coverage(question: str, retrieved: Iterable[dict]) -> float:
 
 
 PASSAGE_TABLE = "api_passage"
+DOCUMENT_TABLE = "api_document"
 FTS_TABLE = "api_passage_fts"
 
 _FTS_COLUMNS = [
@@ -183,7 +184,7 @@ def retrieve_from_connection(
     try:
         if not _table_exists(cursor, FTS_TABLE) or not _table_exists(
             cursor, PASSAGE_TABLE
-        ):
+        ) or not _table_exists(cursor, DOCUMENT_TABLE):
             return []
 
         marker = (
@@ -192,10 +193,13 @@ def retrieve_from_connection(
 
         cursor.execute(
             f"""
-            SELECT p.{", p.".join(_FTS_COLUMNS)},
+            SELECT p.source_id, p.document_id, d.title,
+                   d.source_url AS url, p.section, p.page,
+                   d.date_checked AS date, d.status, p.text,
                    bm25({FTS_TABLE}) AS rank
             FROM {FTS_TABLE}
             JOIN {PASSAGE_TABLE} AS p ON p.id = {FTS_TABLE}.rowid
+            JOIN {DOCUMENT_TABLE} AS d ON d.id = p.document_id
             WHERE {FTS_TABLE} MATCH {marker}
             ORDER BY rank
             LIMIT {marker}

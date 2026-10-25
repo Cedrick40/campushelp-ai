@@ -243,8 +243,8 @@ async function browserChecksMock(driver) {
     (await driver.evaluate("document.querySelectorAll('.examples__button').length")) === 3,
   )
   check(
-    'answer area starts empty',
-    (await driver.evaluate(driver.text('.answer'))).includes('Your answer will appear here'),
+    'the conversation starts with the welcome message',
+    (await driver.evaluate(driver.text('.chat__welcome'))).includes('Your answer will appear here'),
   )
   check(
     'footer says the project is unofficial',
@@ -282,39 +282,41 @@ async function browserChecksMock(driver) {
   await driver.evaluate("document.querySelectorAll('.examples__button')[0].click()")
   await new Promise((resolve) => setTimeout(resolve, 150))
   check(
-    'clicking an example fills the box',
-    (await driver.evaluate("document.querySelector('.ask__input').value")).includes('register for exams'),
+    'clicking an example adds the question to the conversation',
+    (await driver.evaluate(driver.text('.message--user .bubble--user'))).includes('register for exams'),
   )
   check(
     'a loading state is visible while waiting',
     (await driver.evaluate("!!document.querySelector('.answer--loading')")) === true,
   )
   await driver.waitFor("!!document.querySelector('.answer--answered')", 15000)
-  check('the answer is rendered', (await driver.evaluate(driver.text('.answer__text'))).length > 0)
-  check('the answer is labelled', (await driver.evaluate(driver.text('.answer__status'))).toLowerCase() === 'answer')
-  check('source cards are rendered', (await driver.evaluate("document.querySelectorAll('.source').length")) > 0)
-  check('the source excerpt is rendered', (await driver.evaluate(driver.text('.source__excerpt'))).length > 0)
+  check('the answer is rendered', (await driver.evaluate(driver.text('.answer--answered .answer__text'))).length > 0)
+  check('the answer is labelled', (await driver.evaluate(driver.text('.answer--answered .answer__status'))).toLowerCase() === 'answer')
+  check('source cards are rendered', (await driver.evaluate("document.querySelectorAll('.answer--answered .source').length")) > 0)
+  check('the source excerpt is rendered', (await driver.evaluate(driver.text('.answer--answered .source__excerpt'))).length > 0)
   check(
     'the source details are rendered',
-    (await driver.evaluate(driver.text('.source__meta'))).includes('Section') &&
-      (await driver.evaluate(driver.text('.source__meta'))).includes('Date'),
+    (await driver.evaluate(driver.text('.answer--answered .source__meta'))).includes('Section') &&
+      (await driver.evaluate(driver.text('.answer--answered .source__meta'))).includes('Date'),
   )
 
-  await driver.evaluate("document.querySelectorAll('.examples__button')[2].click()")
+  await driver.evaluate(driver.fillQuestion('Can I get a refund on accommodation fees?'))
+  await new Promise((resolve) => setTimeout(resolve, 150))
+  await driver.evaluate("document.querySelector('.ask__submit').click()")
   await driver.waitFor("!!document.querySelector('.answer--unverified')", 15000)
   check(
     'the honest fallback is shown',
-    (await driver.evaluate(driver.text('.answer__status'))).toLowerCase() === 'not verified',
+    (await driver.evaluate(driver.text('.answer--unverified .answer__status'))).toLowerCase() === 'not verified',
   )
   check(
     'the fallback uses the agreed wording',
-    (await driver.evaluate(driver.text('.answer__message'))).includes(
+    (await driver.evaluate(driver.text('.answer--unverified .answer__message'))).includes(
       'I could not verify this from the available documents.',
     ),
   )
   check(
     'the fallback names the office to contact',
-    (await driver.evaluate(driver.text('.answer'))).includes('Student Affairs Office'),
+    (await driver.evaluate(driver.text('.answer--unverified'))).includes('Student Affairs Office'),
   )
 
   await driver.evaluate(driver.fillQuestion('Is there a conflict between the registration dates?'))
@@ -323,11 +325,11 @@ async function browserChecksMock(driver) {
   await driver.waitFor("!!document.querySelector('.answer--conflict')", 15000)
   check(
     'conflicting sources are shown',
-    (await driver.evaluate(driver.text('.answer__status'))).toLowerCase() === 'sources disagree',
+    (await driver.evaluate(driver.text('.answer--conflict .answer__status'))).toLowerCase() === 'sources disagree',
   )
   check(
     'both conflicting sources are shown',
-    (await driver.evaluate("document.querySelectorAll('.source').length")) >= 2,
+    (await driver.evaluate("document.querySelectorAll('.answer--conflict .source').length")) >= 2,
   )
 
   await driver.evaluate(driver.fillQuestion('please trigger an error'))
@@ -336,11 +338,11 @@ async function browserChecksMock(driver) {
   await driver.waitFor("!!document.querySelector('.answer--failed')", 15000)
   check(
     'a service failure is shown',
-    (await driver.evaluate(driver.text('.answer__status'))).toLowerCase() === 'request failed',
+    (await driver.evaluate(driver.text('.answer--failed .answer__status'))).toLowerCase() === 'request failed',
   )
   check(
     'a service failure offers a retry',
-    (await driver.evaluate(driver.text('.answer__retry'))).includes('Try again'),
+    (await driver.evaluate(driver.text('.answer--failed .answer__retry'))).includes('Try again'),
   )
 }
 

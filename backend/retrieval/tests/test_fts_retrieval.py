@@ -14,6 +14,7 @@ import unittest
 from retrieval.search import (
     MIN_SCORE,
     PASSAGE_TABLE,
+    DOCUMENT_TABLE,
     FTS_TABLE,
     retrieve,
     retrieve_from_connection,
@@ -63,10 +64,17 @@ def build_db() -> sqlite3.Connection:
     connection = sqlite3.connect(":memory:")
     connection.execute(
         f"""
+        CREATE TABLE {DOCUMENT_TABLE} (
+            id TEXT PRIMARY KEY, title TEXT, source_url TEXT,
+            date_checked TEXT, status TEXT
+        )
+        """
+    )
+    connection.execute(
+        f"""
         CREATE TABLE {PASSAGE_TABLE} (
-            id INTEGER PRIMARY KEY,
-            source_id TEXT, document_id INTEGER, title TEXT, url TEXT,
-            section TEXT, page INTEGER, date TEXT, status TEXT, text TEXT
+            id INTEGER PRIMARY KEY, source_id TEXT, document_id TEXT,
+            section TEXT, page INTEGER, text TEXT
         )
         """
     )
@@ -77,15 +85,25 @@ def build_db() -> sqlite3.Connection:
     for passage in PASSAGES:
         connection.execute(
             f"""
-            INSERT INTO {PASSAGE_TABLE}
-            (id, source_id, document_id, title, url, section, page, date, status, text)
-            VALUES (?,?,?,?,?,?,?,?,?,?)
+            INSERT OR IGNORE INTO {DOCUMENT_TABLE}
+            (id, title, source_url, date_checked, status)
+            VALUES (?,?,?,?,?)
             """,
             (
-                passage["id"], passage["source_id"], passage["document_id"],
-                passage["title"], passage["url"], passage["section"],
-                passage["page"], passage["date"], passage["status"],
-                passage["text"],
+                str(passage["document_id"]), passage["title"], passage["url"],
+                passage["date"], passage["status"],
+            ),
+        )
+        connection.execute(
+            f"""
+            INSERT INTO {PASSAGE_TABLE}
+            (id, source_id, document_id, section, page, text)
+            VALUES (?,?,?,?,?,?)
+            """,
+            (
+                passage["id"], passage["source_id"],
+                str(passage["document_id"]), passage["section"],
+                passage["page"], passage["text"],
             ),
         )
         connection.execute(
@@ -123,7 +141,7 @@ class Fts5RetrievalTests(unittest.TestCase):
         self.assertEqual(top["section"], "Registration")
         self.assertEqual(top["page"], 3)
         self.assertEqual(top["url"], "https://example.edu/reg")
-        self.assertEqual(top["document_id"], 1)
+        self.assertEqual(top["document_id"], "1")
 
     def test_every_result_carries_a_score(self):
         results = retrieve_from_connection(

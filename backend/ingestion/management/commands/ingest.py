@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from ingestion.ingest import ingest_documents
@@ -9,7 +10,7 @@ class Command(BaseCommand):
     help = "Ingest the curated corpus metadata and source documents into the database."
 
     def handle(self, *args, **options):
-        root_dir = Path(__file__).resolve().parents[3]
+        root_dir = Path(settings.BASE_DIR).parent
         metadata_path = root_dir / "metadata" / "documents.json"
         documents_dir = root_dir / "documents"
 

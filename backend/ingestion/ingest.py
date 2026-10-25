@@ -138,7 +138,12 @@ def ingest_documents(documents_dir: str | Path = DEFAULT_DOCUMENTS_DIR, metadata
 
     for record in records:
         local_path = record.get("local_path")
-        candidate = Path(local_path) if local_path else _resolve_local_path(record["id"], directory)
+        if local_path:
+            candidate = Path(local_path)
+            if not candidate.is_absolute():
+                candidate = directory / candidate
+        else:
+            candidate = _resolve_local_path(record["id"], directory)
         if candidate is None or not candidate.exists():
             continue
 

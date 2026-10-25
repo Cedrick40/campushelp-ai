@@ -2,27 +2,17 @@ import SourceCard from './SourceCard.jsx'
 import { AlertIcon, CheckIcon, InfoIcon, WarningIcon } from './icons.jsx'
 
 /**
- * The answer area renders exactly one of: the answer with its sources, the
- * honest fallback, the conflicting-sources display, or a failure message with
- * a retry.
+ * The content of one assistant reply. It renders exactly one of: the answer
+ * with its sources, the honest fallback, the conflicting-sources display, or
+ * a failure message with a retry.
  *
  * Each state carries a written label and an icon, so the difference between an
  * answer, a refusal and a failure never depends on colour alone.
  */
 export default function AnswerArea({ state, result, error, onRetry }) {
-  if (state === 'idle') {
-    return (
-      <section className="answer answer--idle" aria-live="polite">
-        <p className="answer__placeholder">
-          Your answer will appear here, together with the document it came from.
-        </p>
-      </section>
-    )
-  }
-
   if (state === 'loading') {
     return (
-      <section className="answer answer--loading" aria-live="polite" aria-busy="true">
+      <div className="answer__loading" aria-busy="true">
         <div className="answer__header">
           <span className="answer__icon">
             <span className="spinner" />
@@ -33,13 +23,13 @@ export default function AnswerArea({ state, result, error, onRetry }) {
           Looking through the approved documents for passages that answer your
           question.
         </p>
-      </section>
+      </div>
     )
   }
 
   if (state === 'error') {
     return (
-      <section className="answer answer--failed" role="alert">
+      <div className="answer__failed" role="alert">
         <div className="answer__header">
           <span className="answer__icon">
             <AlertIcon size={15} />
@@ -50,23 +40,23 @@ export default function AnswerArea({ state, result, error, onRetry }) {
         <button className="answer__retry" type="button" onClick={onRetry}>
           Try again
         </button>
-      </section>
+      </div>
     )
   }
 
   if (!result) {
     return (
-      <section className="answer answer--idle" aria-live="polite">
-        <p className="answer__placeholder">
-          Your answer will appear here, together with the document it came from.
-        </p>
-      </section>
+      <p className="answer__placeholder">
+        Your answer will appear here, together with the document it came from.
+      </p>
     )
   }
 
+  const sources = result.sources ?? []
+
   if (result.status === 'insufficient_evidence') {
     return (
-      <section className="answer answer--unverified" aria-live="polite">
+      <div className="answer__unverified">
         <div className="answer__header">
           <span className="answer__icon">
             <InfoIcon size={15} />
@@ -82,16 +72,19 @@ export default function AnswerArea({ state, result, error, onRetry }) {
         {result.contactLine ? (
           <p className="answer__contact">
             Contact the {result.contactLine.office}
-            {result.contactLine.source ? ` (see ${result.contactLine.source})` : ''}.
+            {result.contactLine.source
+              ? ` (see ${result.contactLine.source})`
+              : ''}
+            .
           </p>
         ) : null}
-      </section>
+      </div>
     )
   }
 
   if (result.status === 'conflicting_sources') {
     return (
-      <section className="answer answer--conflict" aria-live="polite">
+      <div className="answer__conflict">
         <div className="answer__header">
           <span className="answer__icon">
             <WarningIcon size={15} />
@@ -100,20 +93,24 @@ export default function AnswerArea({ state, result, error, onRetry }) {
         </div>
         <p className="answer__message">These sources disagree.</p>
         {result.answer ? <p className="answer__text">{result.answer}</p> : null}
-        {result.sources.length > 0 ? (
+        {sources.length > 0 ? (
           <div className="sources sources--conflict">
-            {result.sources.map((source, index) => (
-              <SourceCard key={`${source.title}-${index}`} source={source} index={index} />
+            {sources.map((source, index) => (
+              <SourceCard
+                key={`${source.title}-${index}`}
+                source={source}
+                index={index}
+              />
             ))}
           </div>
         ) : null}
-      </section>
+      </div>
     )
   }
 
   if (result.status === 'error') {
     return (
-      <section className="answer answer--failed" role="alert">
+      <div className="answer__failed" role="alert">
         <div className="answer__header">
           <span className="answer__icon">
             <AlertIcon size={15} />
@@ -121,17 +118,18 @@ export default function AnswerArea({ state, result, error, onRetry }) {
           <p className="answer__status">Request failed</p>
         </div>
         <p className="answer__message">
-          {result.message ?? 'The service is temporarily unavailable. Please try again.'}
+          {result.message ??
+            'The service is temporarily unavailable. Please try again.'}
         </p>
         <button className="answer__retry" type="button" onClick={onRetry}>
           Try again
         </button>
-      </section>
+      </div>
     )
   }
 
   return (
-    <section className="answer answer--answered" aria-live="polite">
+    <div className="answer__answered">
       <div className="answer__header">
         <span className="answer__icon">
           <CheckIcon size={15} />
@@ -145,21 +143,25 @@ export default function AnswerArea({ state, result, error, onRetry }) {
           I could not verify this from the available documents.
         </p>
       )}
-      {result.sources.length > 0 ? (
+      {sources.length > 0 ? (
         <>
           <h3 className="answer__sourcesHeading">
             Sources
             <span className="answer__sourcesCount">
-              {result.sources.length} {result.sources.length === 1 ? 'document' : 'documents'}
+              {sources.length} {sources.length === 1 ? 'document' : 'documents'}
             </span>
           </h3>
           <div className="sources">
-            {result.sources.map((source, index) => (
-              <SourceCard key={`${source.title}-${index}`} source={source} index={index} />
+            {sources.map((source, index) => (
+              <SourceCard
+                key={`${source.title}-${index}`}
+                source={source}
+                index={index}
+              />
             ))}
           </div>
         </>
       ) : null}
-    </section>
+    </div>
   )
 }
