@@ -149,5 +149,11 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-only-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
-CORS_ALLOWED_ORIGINS = [os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173")]
+CORS_ALLOWED_ORIGINS = [
+    os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173"),
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 DOCUMENTS_DIR = BASE_DIR.parent / "documents"
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = False
