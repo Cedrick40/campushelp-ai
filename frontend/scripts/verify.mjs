@@ -313,9 +313,14 @@ async function browserChecksMock(driver) {
     `${layout.heroWidth}px wide, ${layout.heroHeight}px high, radius ${layout.heroRadius}`,
   )
   check(
-    'hero photo ends with the welcome copy',
-    layout.heroBottom - layout.heroCopyBottom >= 8 &&
-      layout.heroBottom - layout.heroCopyBottom <= 32,
+    'hero photo reaches down toward the search bar',
+    layout.composerTop - layout.heroBottom >= 32 &&
+      layout.composerTop - layout.heroBottom <= 160,
+    `${(layout.composerTop - layout.heroBottom).toFixed(1)}px above the composer`,
+  )
+  check(
+    'hero copy stays inside the photo',
+    layout.heroBottom - layout.heroCopyBottom >= 8,
     `${(layout.heroBottom - layout.heroCopyBottom).toFixed(1)}px below the copy`,
   )
   check(
@@ -381,7 +386,9 @@ async function browserChecksMock(driver) {
         viewport: window.innerWidth,
         documentWidth: document.documentElement.scrollWidth,
         heroVisible: !!hero && hero.width > 0,
+        heroBottom: hero?.bottom ?? 0,
         heroCopyGap: hero && heroCopy ? hero.bottom - heroCopy.bottom : 0,
+        composerTop: composer?.top ?? 0,
         composerFooterGap: composer && footer ? footer.top - composer.bottom : 0,
         headerGap: brand && actions ? actions.left - brand.right : -9999,
       };
@@ -403,13 +410,28 @@ async function browserChecksMock(driver) {
       `${responsive.composerFooterGap}px gap`,
     )
     if (height > 560) {
-      check(
-        `${name} ends hero after the copy`,
-        responsive.heroVisible &&
-          responsive.heroCopyGap >= 8 &&
-          responsive.heroCopyGap <= 32,
-        `${responsive.heroCopyGap.toFixed(1)}px`,
-      )
+      check(`${name} shows the hero`, responsive.heroVisible)
+      if (height >= 700) {
+        check(
+          `${name} stretches the hero toward the composer`,
+          responsive.composerTop - responsive.heroBottom >= 32 &&
+            responsive.composerTop - responsive.heroBottom <= 200,
+          `${(responsive.composerTop - responsive.heroBottom).toFixed(1)}px above the composer`,
+        )
+        check(
+          `${name} keeps the hero copy inside the photo`,
+          responsive.heroVisible && responsive.heroCopyGap >= 8,
+          `${responsive.heroCopyGap.toFixed(1)}px`,
+        )
+      } else {
+        check(
+          `${name} ends hero after the copy`,
+          responsive.heroVisible &&
+            responsive.heroCopyGap >= 8 &&
+            responsive.heroCopyGap <= 32,
+          `${responsive.heroCopyGap.toFixed(1)}px`,
+        )
+      }
     } else {
       check(`${name} hides the hero to protect the chat`, responsive.heroVisible === false)
     }

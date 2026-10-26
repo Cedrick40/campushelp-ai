@@ -1857,3 +1857,14 @@ a:hover {
     display: none;
   }
 }
+
+@media (min-height: 700px) {
+  .heroBanner {
+    flex: 1;
+    align-items: flex-start;
+  }
+
+  .chat--welcome {
+    flex: none;
+  }
+}

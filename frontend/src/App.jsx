@@ -455,7 +455,7 @@ export default function App() {
           </section>
         ) : null}
 
-        <main className="chat">
+        <main className={`chat${messages.length === 0 ? ' chat--welcome' : ''}`}>
           <div
             className="chat__scroll"
             ref={scrollRef}
