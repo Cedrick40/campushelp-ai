@@ -48,10 +48,14 @@ Rules:
   answer null, cited_source_ids [], and a message explaining that the
   available documents do not contain it. If the question is ambiguous,
   the message asks which thing the student means.
-- If the passages disagree with each other: status "conflicting_sources",
-  an answer that explains the disagreement without choosing a side,
-  cited_source_ids listing at least two of the disagreeing passages, and
-  message "These sources disagree."
+- If the passages disagree with each other for the same group of students:
+  status "conflicting_sources", an answer that explains the disagreement
+  without choosing a side, cited_source_ids listing at least two of the
+  disagreeing passages, and message "These sources disagree."
+- A rule for all students and a narrower rule explicitly limited to a named
+  subgroup (for example, applicants on the supplementary list) are not a
+  conflict. For a general question, answer with the general rule and cite
+  only that passage.
 - Never invent dates, fees, amounts, policies, office names or contacts
   that are not in the passages.
 - Output JSON only, with exactly these keys: status, answer,

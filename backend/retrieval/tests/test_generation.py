@@ -163,6 +163,45 @@ class GenerationBoundaryTests(unittest.TestCase):
         self.assertEqual(result["cited_source_ids"], ["REG-001", "REG-002"])
 
     @patch.dict(os.environ, {"AI_API_KEY": "test-key"})
+    def test_general_rule_wins_over_a_subgroup_rule(self):
+        evidence = [
+            {
+                "source_id": "REG-ALL",
+                "document_id": "DOC-ALL",
+                "text": (
+                    "The registration deadline ends after the fourth week. "
+                    "This is the requirement for all students, new and continuing."
+                ),
+            },
+            {
+                "source_id": "REG-SUPP",
+                "document_id": "DOC-SUPP",
+                "text": (
+                    "Registration shall be done two weeks before commencement "
+                    "for applicants on the supplementary list."
+                ),
+            },
+        ]
+
+        def conflict_provider(question, evidence):
+            return {
+                "status": "conflicting_sources",
+                "answer": "The sources give different registration dates.",
+                "cited_source_ids": ["REG-ALL", "REG-SUPP"],
+                "message": None,
+            }
+
+        result = generate_answer(
+            evidence,
+            "When is registration?",
+            provider=conflict_provider,
+        )
+        self.assertEqual(result["status"], "answered")
+        self.assertEqual(result["answer"], evidence[0]["text"])
+        self.assertEqual(result["cited_source_ids"], ["REG-ALL"])
+        self.assertIsNone(result["message"])
+
+    @patch.dict(os.environ, {"AI_API_KEY": "test-key"})
     def test_provider_failure_never_leaks_details(self):
         def broken_provider(question, evidence):
             raise RuntimeError("AI_API_KEY=sk-secret https://provider.internal")

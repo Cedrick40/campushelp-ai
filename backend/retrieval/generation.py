@@ -117,6 +117,69 @@ def _exact_answer(answer: str, citations: list[str], evidence: list[dict]) -> st
     return _normalize_text(best["text"])
 
 
+GENERAL_RULE_MARKERS = (
+    "all students",
+    "every student",
+    "each student",
+    "all candidates",
+    "all learners",
+)
+SUBGROUP_RULE_MARKERS = (
+    "supplementary list",
+    "applicants on the",
+    "for applicants",
+    "specific programme",
+    "specific program",
+    "only applicants",
+    "only students",
+)
+
+
+def _general_rule(citations: list[str], evidence: list[dict]) -> dict | None:
+    """
+    Pick the all-students rule when a conflict is really general vs subgroup.
+
+    A policy for everyone and a narrower policy for a named subgroup are not
+    contradictory; the general question should get the general rule.
+    """
+    by_id = {
+        str(passage.get("source_id")): passage
+        for passage in evidence
+        if isinstance(passage, dict)
+        and passage.get("source_id") is not None
+        and isinstance(passage.get("text"), str)
+    }
+    cited = [by_id[source_id] for source_id in citations if source_id in by_id]
+
+    if len(cited) < 2:
+        return None
+
+    general = [
+        passage
+        for passage in cited
+        if any(
+            marker in _normalize_text(passage["text"]).lower()
+            for marker in GENERAL_RULE_MARKERS
+        )
+    ]
+
+    if len(general) != 1:
+        return None
+
+    others = [passage for passage in cited if passage is not general[0]]
+
+    if not all(
+        any(
+            marker in _normalize_text(passage["text"]).lower()
+            for marker in SUBGROUP_RULE_MARKERS
+        )
+        for passage in others
+    ):
+        return None
+
+    return general[0]
+
+
 def _normalize(raw: dict, evidence: list[dict]) -> dict:
     """Drop unknown citations and enforce the layer-2 fallback rules."""
     if not isinstance(raw, dict):
@@ -162,7 +225,14 @@ def _normalize(raw: dict, evidence: list[dict]) -> dict:
         message = message if message and message.strip() else NOT_VERIFIED_MESSAGE
 
     if status == "conflicting_sources":
-        if len(_cited_documents(citations, evidence)) < 2:
+        general_rule = _general_rule(citations, evidence)
+
+        if general_rule is not None:
+            status = "answered"
+            answer = _normalize_text(general_rule["text"])
+            citations = [general_rule["source_id"]]
+            message = None
+        elif len(_cited_documents(citations, evidence)) < 2:
             status = "insufficient_evidence"
             answer = None
             citations = []
