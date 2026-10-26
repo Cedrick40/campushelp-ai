@@ -25,8 +25,25 @@ services:
       - key: DJANGO_ALLOWED_HOSTS
         value: campushelp-ai.onrender.com
       - key: FRONTEND_ORIGINS
-        value: https://campushelp-ai.vercel.app
+        value: https://campushelp-ai.vercel.app,https://campushelp-ai-web.onrender.com
       - key: FRONTEND_ORIGIN_REGEXES
         value: ^https://campushelp[a-z0-9-]*\.vercel\.app$
       - key: AI_API_KEY
         sync: false
+
+  - type: web
+    name: campushelp-ai-web
+    runtime: static
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+    routes:
+      - type: rewrite
+        source: /proxy-api/*
+        destination: https://campushelp-ai.onrender.com/api/*
+      - type: rewrite
+        source: /*
+        destination: /index.html

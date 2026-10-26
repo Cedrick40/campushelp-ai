@@ -139,6 +139,14 @@ target in `frontend/vercel.json`. Alternatively edit `apiBaseUrl` in the
 deployed `config.js` (copied from `frontend/public/config.js`) to bypass the
 proxy without rebuilding.
 
+`render.yaml` also defines a free Render static-site mirror,
+`https://campushelp-ai-web.onrender.com`. It builds `frontend/`, proxies
+`/proxy-api/*` to the backend, and serves `index.html` for app routes. Use this
+URL on networks where Vercel's newer anycast addresses
+(`216.198.79.0/24` and `64.29.17.0/24`) time out. After changing
+`render.yaml`, open the Blueprint in the Render Dashboard and sync it once;
+subsequent pushes deploy automatically.
+
 ## Project structure
 
 ```

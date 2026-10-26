@@ -74,7 +74,9 @@ host without a code change.
 Production builds set `VITE_API_SAME_ORIGIN=true`. Vercel rewrites
 `/proxy-api/*` to the Django backend using `vercel.json`, so the browser only
 talks to the Vercel origin. This avoids CORS and works even if the student's
-network cannot reach the backend host directly. Vercel reserves `/api` for
+network cannot reach the backend host directly. The root `render.yaml` also
+defines a Render static-site mirror with the same proxy rule for networks where
+Vercel's newer edge addresses are unreachable. Vercel reserves `/api` for
 serverless functions, so the public proxy prefix is `/proxy-api`:
 
 ```json
