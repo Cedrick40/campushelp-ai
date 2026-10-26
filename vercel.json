@@ -1,21 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/proxy-api/(.*)",
-      "destination": "https://campushelp-ai.onrender.com/api/$1"
-    },
-    {
-      "source": "/slash/:path*/",
-      "destination": "https://campushelp-ai.onrender.com/api/:path*/"
-    },
-    {
-      "source": "/api-test",
-      "destination": "https://campushelp-ai.onrender.com/api/health/"
-    },
-    { "source": "/health-check", "destination": "/deploy-check.txt" },
-    { "source": "/proxy-test", "destination": "https://httpbin.org/get" },
-    {
-      "source": "/api/:path*",
+      "source": "/proxy-api/:path*",
       "destination": "https://campushelp-ai.onrender.com/api/:path*"
     }
   ]

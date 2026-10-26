@@ -2,9 +2,9 @@
  * API layer for CampusHelp AI.
  *
  * The backend address lives in VITE_API_BASE_URL (see frontend/.env). Set
- * VITE_API_SAME_ORIGIN=true when the static host proxies /api to the backend
- * (Vercel does this in vercel.json); the build then calls /api on its own
- * origin and ignores any baked backend URL.
+ * VITE_API_SAME_ORIGIN=true when the static host proxies /proxy-api to the
+ * backend's /api (Vercel does this in vercel.json); the build then calls
+ * /proxy-api on its own origin and ignores any baked backend URL.
  *
  * Two modes, switched by VITE_USE_MOCK:
  *
@@ -51,6 +51,18 @@ const rawBaseUrl =
 /** Backend origin without a trailing slash, e.g. "http://localhost:8000". */
 export const API_BASE_URL = String(rawBaseUrl).replace(/\/+$/, '')
 
+// Vercel reserves /api for serverless functions, so the Vercel rewrite uses
+// /proxy-api and maps it to the backend's /api. Keep the public API paths
+// unchanged; only the same-origin build swaps the prefix.
+const SAME_ORIGIN_PROXY = '/proxy-api'
+
+function resolveApiPath(path) {
+  if (sameOrigin && path.startsWith('/api/')) {
+    return `${SAME_ORIGIN_PROXY}/${path.slice('/api/'.length)}`
+  }
+  return `${API_BASE_URL}${path}`
+}
+
 const runtimeMock =
   typeof runtimeConfig.useMock === 'boolean' ? runtimeConfig.useMock : null
 
@@ -85,14 +97,15 @@ export class ApiError extends Error {
 /**
  * Source links come back in two shapes: a public URL for official documents,
  * and a backend path such as "/api/documents/12/file/" for sample documents.
- * The path form needs the backend origin prepended to stay clickable.
+ * The path form needs the backend origin (or the same-origin proxy)
+ * prepended to stay clickable.
  */
 function resolveUrl(url) {
   if (!url) return null
   const value = String(url).trim()
   if (!value) return null
   if (/^https?:\/\//i.test(value)) return value
-  if (value.startsWith('/')) return `${API_BASE_URL}${value}`
+  if (value.startsWith('/')) return resolveApiPath(value)
   return value
 }
 
@@ -172,7 +185,7 @@ async function request(path, { method = 'GET', body } = {}) {
 
   let response
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    response = await fetch(resolveApiPath(path), {
       method,
       headers: body ? { 'Content-Type': 'application/json' } : undefined,
       body,

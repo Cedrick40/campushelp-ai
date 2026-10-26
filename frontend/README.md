@@ -68,16 +68,17 @@ The backend address lives in `VITE_API_BASE_URL` rather than in the source so
 that the same build can point at a laptop, a teammate's machine or a deployed
 host without a code change.
 
-Production builds set `VITE_API_SAME_ORIGIN=true`. Vercel rewrites `/api/*`
-to the Django backend using `vercel.json`, so the browser only talks to the
-Vercel origin. This avoids CORS and works even if the student's network cannot
-reach the backend host directly. The rewrite target is the production backend:
+Production builds set `VITE_API_SAME_ORIGIN=true`. Vercel rewrites
+`/proxy-api/*` to the Django backend using `vercel.json`, so the browser only
+talks to the Vercel origin. This avoids CORS and works even if the student's
+network cannot reach the backend host directly. Vercel reserves `/api` for
+serverless functions, so the public proxy prefix is `/proxy-api`:
 
 ```json
 {
   "rewrites": [
     {
-      "source": "/api/:path*",
+      "source": "/proxy-api/:path*",
       "destination": "https://campushelp-ai.onrender.com/api/:path*"
     }
   ]
