@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { MAX_QUESTION_LENGTH } from '../api.js'
-import { SendIcon } from './icons.jsx'
+import { MicIcon, SendIcon } from './icons.jsx'
 
 /**
  * The chat composer: a growing textarea, a send button, client-side
@@ -13,10 +13,17 @@ import { SendIcon } from './icons.jsx'
 export default function QuestionBox({ examples, showExamples, isLoading, onAsk }) {
   const [value, setValue] = useState('')
   const [validationError, setValidationError] = useState(null)
+  const [isListening, setIsListening] = useState(false)
+  const [voiceError, setVoiceError] = useState(null)
   const inputRef = useRef(null)
+  const recognitionRef = useRef(null)
+  const voiceBaseRef = useRef('')
 
   const length = value.length
   const isOverLimit = length > MAX_QUESTION_LENGTH
+  const voiceSupported =
+    typeof window !== 'undefined' &&
+    Boolean(window.SpeechRecognition || window.webkitSpeechRecognition)
 
   useEffect(() => {
     const input = inputRef.current
@@ -28,6 +35,100 @@ export default function QuestionBox({ examples, showExamples, isLoading, onAsk }
   useEffect(() => {
     if (!isLoading) inputRef.current?.focus()
   }, [isLoading])
+
+  useEffect(
+    () => () => {
+      recognitionRef.current?.abort()
+    },
+    [],
+  )
+
+  function startListening() {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition
+
+    if (!SpeechRecognition) return
+
+    const recognition = new SpeechRecognition()
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.lang = navigator.language || 'en-US'
+    voiceBaseRef.current = value.trim() ? `${value.trim()} ` : ''
+
+    recognition.onresult = (event) => {
+      if (recognitionRef.current !== recognition) return
+
+      const transcript = Array.from(event.results)
+        .map((result) => result[0]?.transcript ?? '')
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+      setValue(`${voiceBaseRef.current}${transcript}`)
+      setValidationError(null)
+      setVoiceError(null)
+    }
+
+    recognition.onerror = (event) => {
+      if (event.error === 'aborted') return
+      if (recognitionRef.current !== recognition) return
+
+      const messages = {
+        'not-allowed':
+          'Microphone access was blocked. Allow microphone access in your browser and try again.',
+        'service-not-allowed':
+          'Microphone access was blocked. Allow microphone access in your browser and try again.',
+        'no-speech': 'No speech was detected. Click the microphone and try again.',
+        'audio-capture':
+          'No microphone was found. Check your microphone and try again.',
+        network:
+          'Voice typing needs a network connection. Check your connection and try again.',
+      }
+
+      setVoiceError(
+        messages[event.error] ??
+          'Voice typing could not start. Please try again.',
+      )
+      setIsListening(false)
+    }
+
+    recognition.onend = () => {
+      if (recognitionRef.current !== recognition) return
+
+      setIsListening(false)
+      recognitionRef.current = null
+    }
+
+    recognitionRef.current = recognition
+    setVoiceError(null)
+    setValidationError(null)
+
+    try {
+      recognition.start()
+      setIsListening(true)
+    } catch {
+      recognitionRef.current = null
+      setIsListening(false)
+      setVoiceError('Voice typing could not start. Please try again.')
+    }
+  }
+
+  function stopListening({ discard = false } = {}) {
+    const recognition = recognitionRef.current
+    if (!recognition) return
+    if (discard) recognition.onresult = null
+    recognition.stop()
+    setIsListening(false)
+  }
+
+  function toggleListening() {
+    if (isLoading) return
+    if (isListening) {
+      stopListening()
+    } else {
+      startListening()
+    }
+  }
 
   function submit(question) {
     const trimmed = question.trim()
@@ -43,7 +144,10 @@ export default function QuestionBox({ examples, showExamples, isLoading, onAsk }
       return
     }
 
+    stopListening({ discard: true })
+    setIsListening(false)
     setValidationError(null)
+    setVoiceError(null)
     setValue('')
     onAsk(trimmed)
   }
@@ -66,6 +170,8 @@ export default function QuestionBox({ examples, showExamples, isLoading, onAsk }
     setValue(example.question)
     submit(example.question)
   }
+
+  const feedback = validationError || voiceError
 
   return (
     <section className="composer" aria-labelledby="ask-heading">
@@ -115,12 +221,40 @@ export default function QuestionBox({ examples, showExamples, isLoading, onAsk }
             onChange={(event) => {
               setValue(event.target.value)
               if (validationError) setValidationError(null)
+              if (voiceError) setVoiceError(null)
             }}
             onKeyDown={handleKeyDown}
             aria-describedby="question-hint question-count"
             aria-invalid={validationError ? 'true' : 'false'}
             disabled={isLoading}
           />
+          <button
+            className={
+              isListening
+                ? 'ask__voice ask__voice--listening'
+                : 'ask__voice'
+            }
+            type="button"
+            onClick={toggleListening}
+            disabled={isLoading || !voiceSupported}
+            aria-label={
+              !voiceSupported
+                ? 'Voice typing is not supported in this browser'
+                : isListening
+                  ? 'Stop voice typing'
+                  : 'Start voice typing'
+            }
+            aria-pressed={isListening}
+            title={
+              !voiceSupported
+                ? 'Voice typing is not supported in this browser'
+                : isListening
+                  ? 'Stop voice typing'
+                  : 'Start voice typing'
+            }
+          >
+            <MicIcon size={18} />
+          </button>
           <button
             className="ask__submit"
             type="submit"
@@ -136,14 +270,15 @@ export default function QuestionBox({ examples, showExamples, isLoading, onAsk }
         </div>
 
         <div className="ask__footer">
-          {validationError ? (
+          {feedback ? (
             <p className="ask__error" role="alert" id="question-hint">
-              {validationError}
+              {feedback}
             </p>
           ) : (
-            <p className="ask__hint" id="question-hint">
-              Answers come only from approved documents and always show their
-              source.
+            <p className="ask__hint" id="question-hint" aria-live="polite">
+              {isListening
+                ? 'Listening… speak your question, then click the microphone to stop.'
+                : 'Answers come only from approved documents and always show their source.'}
             </p>
           )}
 

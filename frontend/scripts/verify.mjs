@@ -243,6 +243,19 @@ async function browserChecksMock(driver) {
     'three example questions',
     (await driver.evaluate("document.querySelectorAll('.examples__button').length")) === 3,
   )
+  const voiceLabel = await driver.evaluate(
+    "document.querySelector('.ask__voice')?.getAttribute('aria-label') || ''",
+  )
+  check(
+    'voice typing button is shown',
+    (await driver.evaluate("!!document.querySelector('.ask__voice')")) === true,
+  )
+  check(
+    'voice typing button is labelled',
+    voiceLabel.toLowerCase().includes('voice typing'),
+    voiceLabel,
+  )
+
   check(
     'the conversation starts with the welcome message',
     (await driver.evaluate(driver.text('.chat__welcome'))).includes('Your answer will appear here'),
