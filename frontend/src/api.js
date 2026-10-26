@@ -74,6 +74,34 @@ export const isMockMode =
 /** Question length limit, enforced here and by the backend. */
 export const MAX_QUESTION_LENGTH = 500
 
+/**
+ * The auth token is kept in localStorage so a refresh keeps the session.
+ * Local storage is only touched in the browser, never during the Node
+ * verification checks.
+ */
+const TOKEN_KEY = 'campushelp.auth.token'
+
+export function getToken() {
+  try {
+    return globalThis.localStorage?.getItem(TOKEN_KEY) ?? null
+  } catch {
+    return null
+  }
+}
+
+export function setToken(token) {
+  try {
+    if (token) globalThis.localStorage?.setItem(TOKEN_KEY, token)
+    else globalThis.localStorage?.removeItem(TOKEN_KEY)
+  } catch {
+    // Storage can be blocked; the session then lasts for this page only.
+  }
+}
+
+export function clearToken() {
+  setToken(null)
+}
+
 /** Give up on a request that hangs, so the student gets a retry message. */
 const REQUEST_TIMEOUT_MS = Number(import.meta.env?.VITE_REQUEST_TIMEOUT_MS ?? 30000)
 
@@ -151,7 +179,7 @@ export function normalizeResult(payload) {
     status,
     answer: answer || null,
     message: message || null,
-    contactLine: normalizeContactLine(payload?.contact_line),
+    contactLine: normalizeContactLine(payload?.contactLine ?? payload?.contact_line),
     sources: Array.isArray(payload?.sources)
       ? payload.sources.map(normalizeSource)
       : [],
@@ -183,11 +211,16 @@ async function request(path, { method = 'GET', body } = {}) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
+  const headers = {}
+  if (body) headers['Content-Type'] = 'application/json'
+  const token = getToken()
+  if (token) headers.Authorization = `Token ${token}`
+
   let response
   try {
     response = await fetch(resolveApiPath(path), {
       method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
       body,
       signal: controller.signal,
     })
@@ -226,12 +259,15 @@ async function request(path, { method = 'GET', body } = {}) {
   }
 
   if (!response.ok) {
+    if (response.status === 401) clearToken()
     const detail = String(payload?.message ?? '').trim()
     throw new ApiError(
       detail || `The service returned an error (HTTP ${response.status}).`,
       { status: response.status, kind: 'http' },
     )
   }
+
+  if (response.status === 204) return null
 
   if (!payload || typeof payload !== 'object') {
     throw new ApiError('The service returned an unreadable response. Please try again.', {
@@ -294,4 +330,101 @@ export async function fetchCorpus() {
   } catch {
     return null
   }
+}
+
+/* ------------------------------------------------------------------ accounts */
+
+function normalizeUser(raw) {
+  return {
+    id: raw?.id ?? null,
+    email: String(raw?.email ?? '').trim(),
+    name: String(raw?.name ?? '').trim(),
+  }
+}
+
+function storeSession(payload) {
+  const token = String(payload?.token ?? '').trim()
+  if (!token) {
+    throw new ApiError('The service did not return a session. Please try again.', {
+      kind: 'parse',
+    })
+  }
+  setToken(token)
+  return normalizeUser(payload?.user)
+}
+
+export async function registerAccount({ email, password, name }) {
+  return storeSession(
+    await request('/api/auth/register/', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, name }),
+    }),
+  )
+}
+
+export async function loginAccount({ email, password }) {
+  return storeSession(
+    await request('/api/auth/login/', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+  )
+}
+
+/** Restore a saved login on page load. Returns null when there is no session. */
+export async function restoreSession() {
+  if (!getToken()) return null
+  try {
+    return normalizeUser(await request('/api/auth/me/'))
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) return null
+    throw error
+  }
+}
+
+/** Revoke the token on the server, then forget it locally. */
+export async function logoutAccount() {
+  if (!getToken()) return
+  try {
+    await request('/api/auth/logout/', { method: 'POST' })
+  } catch {
+    // The token may already be gone; clearing it locally is what matters.
+  } finally {
+    clearToken()
+  }
+}
+
+/* ------------------------------------------------------------------- history */
+
+function normalizeEntry(raw) {
+  const question = String(raw?.question ?? '').trim()
+  return {
+    id: raw?.id ?? null,
+    question,
+    title: String(raw?.title ?? '').trim() || question,
+    result: raw?.result ? normalizeResult(raw.result) : null,
+    createdAt: String(raw?.created_at ?? '').trim() || null,
+  }
+}
+
+export async function fetchHistory() {
+  const payload = await request('/api/history/')
+  return Array.isArray(payload) ? payload.map(normalizeEntry) : []
+}
+
+export async function saveHistoryEntry({ question, result }) {
+  return normalizeEntry(
+    await request('/api/history/', {
+      method: 'POST',
+      body: JSON.stringify({ question, result }),
+    }),
+  )
+}
+
+export async function deleteHistoryEntry(id) {
+  await request(`/api/history/${id}/`, { method: 'DELETE' })
+}
+
+export async function clearHistory() {
+  await request('/api/history/', { method: 'DELETE' })
 }

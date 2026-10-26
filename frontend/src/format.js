@@ -23,3 +23,35 @@ export function formatDate(value) {
     year: 'numeric',
   }).format(date)
 }
+
+/**
+ * Compact timestamp for the history list: time for today, then day/month,
+ * then day/month/year for older entries.
+ */
+export function formatHistoryTime(value) {
+  const text = String(value ?? '').trim()
+  if (!text) return ''
+
+  const date = new Date(text)
+  if (Number.isNaN(date.getTime())) return ''
+
+  const now = new Date()
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+
+  if (sameDay) {
+    return new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date)
+  }
+
+  const sameYear = date.getFullYear() === now.getFullYear()
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  }).format(date)
+}

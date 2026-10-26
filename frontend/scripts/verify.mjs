@@ -245,7 +245,11 @@ async function browserChecksMock(driver) {
   )
   check(
     'the conversation starts with the welcome message',
-    (await driver.evaluate(driver.text('.chat__welcome'))).includes('Your answer will appear here'),
+    (await driver.evaluate(driver.text('.welcomeSection'))).includes('Grounded Guide'),
+  )
+  check(
+    'a guest can log in or register',
+    (await driver.evaluate("document.querySelectorAll('.authButtons .authButton').length")) === 2,
   )
   check(
     'footer says the project is unofficial',
@@ -430,9 +434,12 @@ try {
   errors.push(`mock contract checks crashed: ${error.message}`)
 }
 
-const chrome = await launchChrome({ port: 9333 })
-if (!chrome) {
-  skip('browser checks', 'no Chrome found on this machine')
+const browsersDisabled = process.env.VERIFY_NO_BROWSER === '1'
+const chrome = browsersDisabled ? null : await launchChrome({ port: 9333 })
+if (browsersDisabled) {
+  skip('browser checks', 'VERIFY_NO_BROWSER=1')
+} else if (!chrome) {
+  skip('browser checks', 'no working Chrome found on this machine')
 } else {
   await chrome.addInitScript(`
     window.__errors = [];
@@ -465,9 +472,11 @@ try {
 }
 
 if (backendUp) {
-  const liveChrome = await launchChrome({ port: 9334 })
-  if (!liveChrome) {
-    skip('live browser checks', 'no Chrome found on this machine')
+  const liveChrome = browsersDisabled ? null : await launchChrome({ port: 9334 })
+  if (browsersDisabled) {
+    skip('live browser checks', 'VERIFY_NO_BROWSER=1')
+  } else if (!liveChrome) {
+    skip('live browser checks', 'no working Chrome found on this machine')
   } else {
     // The browser may only reach the backend from the allowed origin, so the
     // live checks run there. If a dev server is already running on that port
