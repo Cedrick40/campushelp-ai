@@ -260,6 +260,7 @@ async function browserChecksMock(driver) {
     const logo = box('.brandLogoIcon');
     const hero = box('.heroBanner');
     const heroCopy = box('.heroSubtitle');
+    const welcome = box('.welcomeSection');
     return {
       mainWidth: main?.width ?? 0,
       headerWidth: header?.width ?? 0,
@@ -267,6 +268,8 @@ async function browserChecksMock(driver) {
       scrollWidth: scroll?.width ?? 0,
       composerWidth: composer?.width ?? 0,
       composerBottom: composerPanel?.bottom ?? 0,
+      composerTop: composerPanel?.top ?? 0,
+      welcomeBottom: welcome?.bottom ?? 0,
       footerTop: footer?.top ?? 0,
       logoWidth: logo?.width ?? 0,
       logoSource: document.querySelector('.brandLogoIcon')?.getAttribute('src') || '',
@@ -296,6 +299,12 @@ async function browserChecksMock(driver) {
     'the composer sits clear of the footer',
     layout.footerTop - layout.composerBottom >= 16,
     `${layout.footerTop - layout.composerBottom}px gap`,
+  )
+  check(
+    'example questions sit near the composer',
+    layout.composerTop - layout.welcomeBottom >= 0 &&
+      layout.composerTop - layout.welcomeBottom <= 20,
+    `${(layout.composerTop - layout.welcomeBottom).toFixed(1)}px gap`,
   )
   check('campus photo is applied to the hero', layout.heroBackground.includes('ezra.jpg'), layout.heroBackground)
   check(
