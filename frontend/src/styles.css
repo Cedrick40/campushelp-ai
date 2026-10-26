@@ -850,10 +850,18 @@ a:hover {
   height: 100dvh;
   overflow: hidden;
   background-color: var(--canvas);
-  background-image: url('/campus-background.svg');
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(247, 248, 250, 0.86) 0%,
+      rgba(247, 248, 250, 0.94) 55%,
+      rgba(247, 248, 250, 0.9) 100%
+    ),
+    url('/campus-photo.jpeg');
   background-repeat: no-repeat;
-  background-position: right -130px bottom -120px;
-  background-size: min(980px, 72vw) auto;
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
 }
 
 .page__main {
@@ -1245,11 +1253,11 @@ a:hover {
   background:
     linear-gradient(
       90deg,
-      rgba(30, 64, 175, 0.98) 0%,
-      rgba(30, 64, 175, 0.9) 46%,
-      rgba(29, 78, 216, 0.52) 100%
+      rgba(15, 23, 42, 0.92) 0%,
+      rgba(15, 23, 42, 0.76) 45%,
+      rgba(30, 64, 175, 0.3) 100%
     ),
-    url('/campus-hero.svg') right center / cover no-repeat,
+    url('/campus-photo.jpeg') center 42% / cover no-repeat,
     var(--blue-800);
   box-shadow: var(--shadow-md);
   color: #ffffff;

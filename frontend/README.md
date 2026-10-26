@@ -189,8 +189,7 @@ src/
     └── SourceCard.jsx      title, section, date, page, excerpt, link
 
 public/
-├── campus-background.svg  page background line art
-├── campus-hero.svg        welcome-card illustration
+├── campus-photo.jpeg      page background and welcome-card photo
 ├── config.js              runtime API override
 └── favicon.svg            brand mark
 ```

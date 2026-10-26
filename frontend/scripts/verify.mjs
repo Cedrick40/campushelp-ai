@@ -259,6 +259,7 @@ async function browserChecksMock(driver) {
       composerWidth: composer?.width ?? 0,
       logoWidth: logo?.width ?? 0,
       background: getComputedStyle(document.querySelector('.page')).backgroundImage,
+      heroBackground: getComputedStyle(document.querySelector('.heroCard')).backgroundImage,
     };
   })()`)
 
@@ -267,7 +268,8 @@ async function browserChecksMock(driver) {
   check('composer fills the available width', Math.abs(layout.composerWidth - layout.mainWidth) < 2, `${layout.composerWidth} / ${layout.mainWidth}`)
   check('brand and menu are anchored to the left', layout.brandLeft < 96, `${layout.brandLeft}px from the main edge`)
   check('brand logo is visible', layout.logoWidth > 0, `${layout.logoWidth}px`)
-  check('campus background is applied', layout.background.includes('campus-background.svg'), layout.background)
+  check('campus photo is applied to the page', layout.background.includes('campus-photo.jpeg'), layout.background)
+  check('campus photo is applied to the welcome card', layout.heroBackground.includes('campus-photo.jpeg'), layout.heroBackground)
   check(
     'logout is not duplicated in the header',
     (await driver.evaluate("!!document.querySelector('.chatHeader .authButton--text')")) === false,
