@@ -67,7 +67,7 @@ Set these environment variables on the host:
 |---|---|
 | `DJANGO_DEBUG` | `False` |
 | `DJANGO_SECRET_KEY` | a long random value |
-| `DJANGO_ALLOWED_HOSTS` | `campushelp-ai-backend.onrender.com` |
+| `DJANGO_ALLOWED_HOSTS` | `campushelp-ai.onrender.com` |
 | `AI_API_KEY` | your Gemini key |
 | `FRONTEND_ORIGINS` | `https://campushelp-ai.vercel.app` (comma-separated; setting it locks CORS to those origins) |
 | `FRONTEND_ORIGIN_REGEXES` | `^https://campushelp[a-z0-9-]*\.vercel\.app$` (optional, for Vercel preview URLs) |
@@ -105,7 +105,7 @@ Set the backend address, then build:
 
 ```bash
 cd frontend
-VITE_API_BASE_URL=https://campushelp-ai-backend.onrender.com npm run build
+VITE_API_BASE_URL=https://campushelp-ai.onrender.com npm run build
 ```
 
 The committed `frontend/.env.production` already points production builds at
