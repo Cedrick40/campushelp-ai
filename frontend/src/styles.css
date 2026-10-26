@@ -900,6 +900,11 @@ a:hover {
   border-color: var(--blue-100);
 }
 
+.chatHeader__menu--hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .message__avatar {
   display: inline-flex;
   flex: none;
@@ -914,35 +919,6 @@ a:hover {
 .chatHeader .masthead__title {
   font-size: 1.0625rem;
   line-height: 1.25;
-}
-
-.chatHeader__subtitle {
-  margin-top: 1px;
-  font-size: 0.8125rem;
-  line-height: 1.35;
-  color: var(--ink-500);
-}
-
-.chatHeader__new {
-  flex: none;
-  min-height: 34px;
-  padding: 0 12px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--ink-700);
-  background: var(--surface);
-  border: 1px solid var(--line-300);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: color var(--duration) var(--ease),
-    background var(--duration) var(--ease),
-    border-color var(--duration) var(--ease);
-}
-
-.chatHeader__new:hover {
-  color: var(--blue-800);
-  background: var(--blue-50);
-  border-color: var(--blue-100);
 }
 
 .chat {
@@ -1825,10 +1801,6 @@ a:hover {
   .chatHeader__inner {
     gap: 10px;
     padding: 10px 12px;
-  }
-
-  .chatHeader__subtitle {
-    display: none;
   }
 
   .chatHeader__actions {

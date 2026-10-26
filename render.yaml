@@ -1,3 +1,9 @@
+databases:
+  - name: campushelp-db
+    plan: free
+    databaseName: campushelp
+    user: campushelp
+
 services:
   - type: web
     name: campushelp-ai
@@ -8,6 +14,10 @@ services:
     healthCheckPath: /api/health/
     autoDeploy: true
     envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: campushelp-db
+          property: connectionString
       - key: DJANGO_DEBUG
         value: "False"
       - key: DJANGO_SECRET_KEY

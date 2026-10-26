@@ -10,7 +10,7 @@ from django.core.management.base import CommandError
 from django.db import connection
 from django.test import TestCase
 
-from retrieval.search import retrieve_evidence
+from retrieval.search import _retrieve_from_models, retrieve_evidence
 
 from .models import Document, Passage
 from .validators import FakeProvider
@@ -41,6 +41,27 @@ class SearchIndexStaysInSyncTests(TestCase):
 
         self.doc.delete()  # cascades to the passage
         self.assertEqual(search_ids("accommodation"), [])
+
+
+class OrmRetrievalFallbackTests(TestCase):
+    """PostgreSQL uses the ORM ranking path because FTS5 is SQLite-only."""
+
+    def test_ingested_passage_is_found_without_fts(self):
+        doc = Document.objects.create(
+            id="orm-1", title="Fee Schedule", source_url="https://example.edu/fees",
+            corpus_type="official", status="current", file_path="documents/orm-1.md",
+        )
+        passage = Passage.objects.create(
+            document=doc, section="Payment", position=1,
+            text="Tuition fees must be paid before registration closes.",
+        )
+
+        results = _retrieve_from_models("When do tuition fees need to be paid?")
+
+        self.assertTrue(results)
+        self.assertEqual(results[0]["source_id"], str(passage.pk))
+        self.assertEqual(results[0]["document_id"], doc.pk)
+        self.assertIn("Tuition", results[0]["text"])
 
 
 class RetrievalIntegrationTests(TestCase):

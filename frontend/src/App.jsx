@@ -303,12 +303,16 @@ export default function App() {
             <div className="chatHeader__brand">
               {user ? (
                 <button
-                  className="iconButton chatHeader__menu"
+                  className={`iconButton chatHeader__menu ${
+                    isSidebarOpen ? 'chatHeader__menu--hidden' : ''
+                  }`}
                   type="button"
                   onClick={() => setIsSidebarOpen((open) => !open)}
                   aria-label="Toggle chat history sidebar"
                   aria-expanded={isSidebarOpen}
                   aria-controls="chat-history-sidebar"
+                  aria-hidden={isSidebarOpen}
+                  tabIndex={isSidebarOpen ? -1 : 0}
                 >
                   <MenuIcon size={20} />
                 </button>
@@ -316,26 +320,11 @@ export default function App() {
 
               <div className="brandLogoWrap">
                 <LogoIcon size={28} className="brandLogoIcon" />
-                <div>
-                  <h1 className="masthead__title">CampusHelp AI</h1>
-                  <p className="chatHeader__subtitle">
-                    Grounded answers from official campus documents
-                  </p>
-                </div>
+                <h1 className="masthead__title">CampusHelp AI</h1>
               </div>
             </div>
 
             <div className="chatHeader__actions">
-              {messages.length > 0 ? (
-                <button
-                  className="chatHeader__new"
-                  type="button"
-                  onClick={handleNewChat}
-                >
-                  New chat
-                </button>
-              ) : null}
-
               {!isRestoring && !user ? (
                 <div className="authButtons">
                   <button

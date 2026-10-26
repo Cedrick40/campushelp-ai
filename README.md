@@ -13,7 +13,7 @@ Show that an AI assistant can be trusted on rules that cost students money or de
 ## Tools
 
 - Python 3.14, Django 5.2 LTS, Django REST Framework, drf-spectacular (Swagger)
-- SQLite with FTS5 full-text search
+- SQLite with FTS5 full-text search locally; PostgreSQL in production (ORM ranking fallback)
 - Google Gemini API (through one swappable function)
 - React 19 and Vite, Node.js 24 LTS
 - Browser Web Speech API for voice typing (Chrome, Edge and Safari)
@@ -70,6 +70,7 @@ Set these environment variables on the host:
 | `DJANGO_DEBUG` | `False` |
 | `DJANGO_SECRET_KEY` | a long random value |
 | `DJANGO_ALLOWED_HOSTS` | `campushelp-ai.onrender.com` |
+| `DATABASE_URL` | `postgresql://user:password@host:5432/database` (required for durable accounts and history) |
 | `AI_API_KEY` | your Gemini key |
 | `FRONTEND_ORIGINS` | `https://campushelp-ai.vercel.app` (comma-separated; setting it locks CORS to those origins) |
 | `FRONTEND_ORIGIN_REGEXES` | `^https://campushelp[a-z0-9-]*\.vercel\.app$` (optional, for Vercel preview URLs) |
@@ -98,9 +99,22 @@ python manage.py ingest          # loads documents/ + metadata/documents.json
 gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
 ```
 
+Accounts and saved chat history must live in a durable database. Free hosts
+with an ephemeral filesystem lose a local `db.sqlite3` on every restart or
+redeploy, so registration and login stop working. Set `DATABASE_URL` to a
+PostgreSQL database in production; the included `render.yaml` provisions a
+free Render Postgres instance and wires `DATABASE_URL` automatically. Free
+Render Postgres databases expire after 30 days, so upgrade or point
+`DATABASE_URL` at another managed Postgres before then.
+
+With no `DATABASE_URL`, local development still uses SQLite plus FTS5. On
+PostgreSQL the FTS5 migrations are skipped and retrieval uses the same
+keyword ranking over the `Passage` model in Python, so answers keep working.
+
 `python manage.py ingest` must run on the deployed machine, because the
-SQLite database is not committed. If the host uses an ephemeral filesystem,
-run it on every deploy (it is idempotent). Health check: `GET /api/health/`.
+database is not committed. Run it on every deploy (it is idempotent); it
+loads the documents into whichever database `DATABASE_URL` points at. Health
+check: `GET /api/health/`.
 
 If the host deploys only `backend/`, either copy `documents/` and
 `metadata/` into the deployment or point `DOCUMENTS_DIR` at their location.

@@ -30,6 +30,20 @@ REVERSE = [
 ]
 
 
+def install_triggers(apps, schema_editor):
+    if schema_editor.connection.vendor != "sqlite":
+        return
+    for statement in STATEMENTS:
+        schema_editor.execute(statement)
+
+
+def remove_triggers(apps, schema_editor):
+    if schema_editor.connection.vendor != "sqlite":
+        return
+    for statement in REVERSE:
+        schema_editor.execute(statement)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -37,5 +51,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(sql=STATEMENTS, reverse_sql=REVERSE),
+        migrations.RunPython(install_triggers, remove_triggers),
     ]

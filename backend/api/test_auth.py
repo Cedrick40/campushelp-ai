@@ -84,6 +84,20 @@ class HistoryTests(TestCase):
     def create(self, question="When does registration close?"):
         return post(self.client, "/api/history/", {"question": question, "result": RESULT}, token=self.token)
 
+    def test_history_survives_logout_and_login(self):
+        self.create()
+
+        logout = post(self.client, "/api/auth/logout/", {}, token=self.token)
+        self.assertEqual(logout.status_code, 204)
+
+        login = post(self.client, "/api/auth/login/", {
+            "email": "student@example.edu", "password": PASSWORD,
+        })
+        self.assertEqual(login.status_code, 200)
+
+        body = get(self.client, "/api/history/", token=login.json()["token"]).json()
+        self.assertEqual([entry["question"] for entry in body], ["When does registration close?"])
+
     def test_history_requires_authentication(self):
         self.assertEqual(get(self.client, "/api/history/").status_code, 401)
         self.assertEqual(post(self.client, "/api/history/", {"question": "Q", "result": RESULT}).status_code, 401)

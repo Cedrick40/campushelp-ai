@@ -224,14 +224,60 @@ def retrieve_from_db(
     min_coverage: float = MIN_COVERAGE,
 ) -> list[dict]:
     """
-    Spec's SQLite FTS5 `MATCH` retrieval via Django's connection. Returns
-    [] on any missing-DB condition so callers can fall back cleanly.
+    Retrieve from the ingested corpus.
+
+    SQLite uses the FTS5 `MATCH` path. Other databases (PostgreSQL in
+    production) use the same ranking function over the Passage model, so
+    accounts and history can live in a durable hosted database even though
+    FTS5 is SQLite-only. Returns [] on any missing-DB condition.
     """
     from django.db import connection
+
+    if connection.vendor != "sqlite":
+        return _retrieve_from_models(
+            question, top_k=top_k, min_score=min_score
+        )
 
     return retrieve_from_connection(
         connection, question, top_k=top_k, min_score=min_score
     )
+
+
+def _retrieve_from_models(
+    question: str,
+    top_k: int = DEFAULT_TOP_K,
+    min_score: float = MIN_SCORE,
+) -> list[dict]:
+    """Build passage records from the ORM and reuse the offline ranking."""
+    from api.models import Passage
+
+    passages = []
+    rows = (
+        Passage.objects.select_related("document")
+        .order_by("document_id", "position")
+        .iterator()
+    )
+    for passage in rows:
+        document = passage.document
+        passages.append(
+            {
+                "source_id": passage.source_id or str(passage.pk),
+                "document_id": str(document.pk),
+                "title": document.title,
+                "url": document.source_url or None,
+                "section": passage.section,
+                "page": passage.page,
+                "date": (
+                    document.date_checked.isoformat()
+                    if document.date_checked
+                    else None
+                ),
+                "status": document.status,
+                "text": passage.text,
+            }
+        )
+
+    return retrieve(question, passages, top_k=top_k, min_score=min_score)
 
 
 def _table_exists(cursor, name: str) -> bool:
