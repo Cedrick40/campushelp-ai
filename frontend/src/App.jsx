@@ -465,33 +465,6 @@ export default function App() {
           >
             {messages.length === 0 ? (
               <div className="welcomeSection">
-                <div className="aboutCard">
-                  <h3 className="aboutCard__heading">What this AI does</h3>
-                  <div className="aboutGrid">
-                    <div className="aboutItem">
-                      <div className="aboutItem__title">Verified Sources</div>
-                      <div className="aboutItem__desc">
-                        Every answer quotes and links directly to its source
-                        document and exact page.
-                      </div>
-                    </div>
-                    <div className="aboutItem">
-                      <div className="aboutItem__title">Honest Fallback</div>
-                      <div className="aboutItem__desc">
-                        Clearly states when information cannot be found or
-                        verified instead of guessing.
-                      </div>
-                    </div>
-                    <div className="aboutItem">
-                      <div className="aboutItem__title">Privacy First</div>
-                      <div className="aboutItem__desc">
-                        Guest queries are session-only and never saved. Log in to
-                        save your history.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="welcomeExamples">
                   <h3 className="examples__heading">Try asking</h3>
                   <ul className="examples__list">

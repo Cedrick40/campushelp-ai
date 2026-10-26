@@ -243,6 +243,11 @@ async function browserChecksMock(driver) {
     'three example questions',
     (await driver.evaluate("document.querySelectorAll('.examples__button').length")) === 3,
   )
+  const welcomeCopy = await driver.evaluate('document.body.innerText')
+  check(
+    'feature explainer is removed',
+    !welcomeCopy.includes('What this AI does') && !welcomeCopy.includes('Privacy First'),
+  )
   const layout = await driver.evaluate(`(() => {
     const box = (selector) => document.querySelector(selector)?.getBoundingClientRect();
     const main = box('.page__main');
@@ -254,6 +259,7 @@ async function browserChecksMock(driver) {
     const footer = box('.footer');
     const logo = box('.brandLogoIcon');
     const hero = box('.heroBanner');
+    const heroCopy = box('.heroSubtitle');
     return {
       mainWidth: main?.width ?? 0,
       headerWidth: header?.width ?? 0,
@@ -267,6 +273,8 @@ async function browserChecksMock(driver) {
       logoLoaded: (document.querySelector('.brandLogoIcon')?.naturalWidth ?? 0) > 0,
       heroWidth: hero?.width ?? 0,
       heroHeight: hero?.height ?? 0,
+      heroBottom: hero?.bottom ?? 0,
+      heroCopyBottom: heroCopy?.bottom ?? 0,
       heroRadius: hero ? getComputedStyle(document.querySelector('.heroBanner')).borderTopLeftRadius : '',
       pageBackground: getComputedStyle(document.querySelector('.page')).backgroundImage,
       heroBackground: hero ? getComputedStyle(document.querySelector('.heroBanner')).backgroundImage : '',
@@ -292,8 +300,14 @@ async function browserChecksMock(driver) {
   check('campus photo is applied to the hero', layout.heroBackground.includes('ezra.jpg'), layout.heroBackground)
   check(
     'photo hero is full width and uncarded',
-    layout.heroWidth === layout.mainWidth && layout.heroRadius === '0px' && layout.heroHeight > 200,
+    layout.heroWidth === layout.mainWidth && layout.heroRadius === '0px' && layout.heroHeight > 100,
     `${layout.heroWidth}px wide, ${layout.heroHeight}px high, radius ${layout.heroRadius}`,
+  )
+  check(
+    'hero photo ends with the welcome copy',
+    layout.heroBottom - layout.heroCopyBottom >= 8 &&
+      layout.heroBottom - layout.heroCopyBottom <= 32,
+    `${(layout.heroBottom - layout.heroCopyBottom).toFixed(1)}px below the copy`,
   )
   check(
     'logout is not duplicated in the header',
@@ -337,6 +351,62 @@ async function browserChecksMock(driver) {
       Math.abs(desktopLayout.openWidth - (desktopLayout.viewport - 280)) < 2,
     `left ${desktopLayout.openLeft}, width ${desktopLayout.openWidth}, viewport ${desktopLayout.viewport}`,
   )
+
+  for (const [name, width, height] of [
+    ['small phone', 320, 568],
+    ['phone', 390, 844],
+    ['tablet', 768, 1024],
+    ['landscape phone', 844, 390],
+  ]) {
+    await driver.setViewport(width, height)
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    const responsive = await driver.evaluate(`(() => {
+      const box = (selector) => document.querySelector(selector)?.getBoundingClientRect();
+      const hero = box('.heroBanner');
+      const heroCopy = box('.heroSubtitle');
+      const composer = box('.composer');
+      const footer = box('.footer');
+      const brand = box('.chatHeader__brand');
+      const actions = box('.chatHeader__actions');
+      return {
+        viewport: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        heroVisible: !!hero && hero.width > 0,
+        heroCopyGap: hero && heroCopy ? hero.bottom - heroCopy.bottom : 0,
+        composerFooterGap: composer && footer ? footer.top - composer.bottom : 0,
+        headerGap: brand && actions ? actions.left - brand.right : -9999,
+      };
+    })()`)
+
+    check(
+      `${name} has no horizontal overflow`,
+      responsive.documentWidth <= width + 1,
+      `${responsive.documentWidth}px / ${width}px`,
+    )
+    check(
+      `${name} keeps the header clear`,
+      responsive.headerGap >= 0,
+      `${responsive.headerGap}px gap`,
+    )
+    check(
+      `${name} keeps composer clear of footer`,
+      responsive.composerFooterGap >= 16,
+      `${responsive.composerFooterGap}px gap`,
+    )
+    if (height > 560) {
+      check(
+        `${name} ends hero after the copy`,
+        responsive.heroVisible &&
+          responsive.heroCopyGap >= 8 &&
+          responsive.heroCopyGap <= 32,
+        `${responsive.heroCopyGap.toFixed(1)}px`,
+      )
+    } else {
+      check(`${name} hides the hero to protect the chat`, responsive.heroVisible === false)
+    }
+  }
+  await driver.setViewport(1280, 900)
+  await new Promise((resolve) => setTimeout(resolve, 200))
 
   const voiceLabel = await driver.evaluate(
     "document.querySelector('.ask__voice')?.getAttribute('aria-label') || ''",

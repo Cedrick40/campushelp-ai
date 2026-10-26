@@ -1208,7 +1208,6 @@ a:hover {
   flex: none;
   align-items: center;
   width: 100%;
-  min-height: clamp(250px, 36vh, 340px);
   overflow: hidden;
   color: #ffffff;
   background:
@@ -1224,25 +1223,13 @@ a:hover {
   box-shadow: 0 18px 36px -30px rgba(8, 17, 35, 0.85);
 }
 
-.heroBanner::after {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 64px;
-  pointer-events: none;
-  content: '';
-  background: linear-gradient(to bottom, transparent, var(--canvas));
-  opacity: 0.82;
-}
-
 .heroBanner__content {
   position: relative;
   z-index: 1;
   width: 100%;
   max-width: calc(var(--container) + 160px);
   margin: 0 auto;
-  padding: clamp(30px, 5vw, 52px) clamp(20px, 5vw, 56px);
+  padding: clamp(28px, 4vw, 48px) clamp(20px, 5vw, 56px) 20px;
 }
 
 .heroGreeting {
@@ -1288,7 +1275,6 @@ a:hover {
 .welcomeSection {
   display: flex;
   flex-direction: column;
-  gap: 20px;
   width: 100%;
   margin: 0 0 20px;
 }
@@ -1302,44 +1288,6 @@ a:hover {
 
 .welcomeExamples .examples__heading {
   margin-bottom: 0;
-}
-
-/* ------------------------------------------------------------------ About Card */
-
-.aboutCard {
-  background: var(--surface);
-  border: 1px solid var(--line-200);
-  border-radius: 12px;
-  padding: 22px 24px;
-  box-shadow: var(--shadow-xs);
-}
-
-.aboutCard__heading {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--ink-500);
-  margin-bottom: 16px;
-}
-
-.aboutGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.aboutItem__title {
-  font-size: 0.875rem;
-  font-weight: 650;
-  color: var(--ink-900);
-  margin-bottom: 4px;
-}
-
-.aboutItem__desc {
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  color: var(--ink-600);
 }
 
 /* ========================================================== Auth & Top Header */
@@ -1839,12 +1787,8 @@ a:hover {
 }
 
 @media (max-width: 520px) {
-  .heroBanner {
-    min-height: 230px;
-  }
-
   .heroBanner__content {
-    padding: 24px 16px 30px;
+    padding: 22px 16px 16px;
   }
 
   .heroTitle {
