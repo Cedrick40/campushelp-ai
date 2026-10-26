@@ -3,6 +3,8 @@
     {
       "source": "/api/:path*",
       "destination": "https://campushelp-ai.onrender.com/api/:path*"
-    }
+    },
+    { "source": "/health-check", "destination": "/deploy-check.txt" },
+    { "source": "/proxy-test", "destination": "https://httpbin.org/get" }
   ]
 }
