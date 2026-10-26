@@ -1019,7 +1019,7 @@ a:hover {
 /* --------------------------------------------------------------- composer */
 
 .composer {
-  padding: 12px;
+  padding: 8px;
   background: var(--surface);
   border: 1px solid var(--line-200);
   border-radius: 14px;
@@ -1049,7 +1049,7 @@ a:hover {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  padding: 4px 4px 4px 12px;
+  padding: 3px 3px 3px 10px;
   background: var(--surface);
 }
 
@@ -1139,8 +1139,7 @@ a:hover {
 }
 
 .ask__footer {
-  margin-top: 8px;
-  padding: 0 2px;
+  margin-top: 6px;
   gap: 10px;
 }
 
@@ -1170,7 +1169,7 @@ a:hover {
   }
 
   .composer {
-    padding: 14px;
+    padding: 10px;
   }
 }
 
