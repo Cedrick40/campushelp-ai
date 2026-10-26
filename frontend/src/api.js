@@ -24,14 +24,30 @@
 
 import { mockAsk, mockCorpus } from './mockApi.js'
 
-const rawBaseUrl = import.meta.env?.VITE_API_BASE_URL ?? ''
+const runtimeConfig =
+  typeof globalThis !== 'undefined' &&
+  globalThis.CAMPUSHELP_CONFIG &&
+  typeof globalThis.CAMPUSHELP_CONFIG === 'object'
+    ? globalThis.CAMPUSHELP_CONFIG
+    : {}
+
+const runtimeBaseUrl =
+  typeof runtimeConfig.apiBaseUrl === 'string'
+    ? runtimeConfig.apiBaseUrl.trim()
+    : ''
+
+const rawBaseUrl = runtimeBaseUrl || import.meta.env?.VITE_API_BASE_URL || ''
 
 /** Backend origin without a trailing slash, e.g. "http://localhost:8000". */
 export const API_BASE_URL = String(rawBaseUrl).replace(/\/+$/, '')
 
+const runtimeMock =
+  typeof runtimeConfig.useMock === 'boolean' ? runtimeConfig.useMock : null
+
 /** True while the app answers from the local mock instead of the backend. */
 export const isMockMode =
-  String(import.meta.env?.VITE_USE_MOCK ?? 'false').toLowerCase() === 'true'
+  runtimeMock ??
+  (String(import.meta.env?.VITE_USE_MOCK ?? 'false').toLowerCase() === 'true')
 
 /** Question length limit, enforced here and by the backend. */
 export const MAX_QUESTION_LENGTH = 500
@@ -119,6 +135,27 @@ export function normalizeResult(payload) {
   }
 }
 
+const LOOPBACK = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i
+
+function backendTarget() {
+  if (API_BASE_URL) return API_BASE_URL
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin
+  }
+  return 'the backend'
+}
+
+/** True when a build made on a laptop is still pointed at localhost online. */
+function pointsAtLocalhostFromDeployedPage() {
+  return (
+    Boolean(API_BASE_URL) &&
+    LOOPBACK.test(API_BASE_URL) &&
+    typeof window !== 'undefined' &&
+    Boolean(window.location?.origin) &&
+    !LOOPBACK.test(window.location.origin)
+  )
+}
+
 async function request(path, { method = 'GET', body } = {}) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
@@ -137,8 +174,18 @@ async function request(path, { method = 'GET', body } = {}) {
         kind: 'timeout',
       })
     }
+    if (pointsAtLocalhostFromDeployedPage()) {
+      throw new ApiError(
+        `This build points at ${API_BASE_URL}, which only works on your computer. ` +
+          'Set VITE_API_BASE_URL (or apiBaseUrl in config.js) to the deployed ' +
+          'backend address, then redeploy the frontend.',
+        { kind: 'config' },
+      )
+    }
     throw new ApiError(
-      'Could not reach the CampusHelp AI service. Check that the backend is running.',
+      `Could not reach the CampusHelp AI service at ${backendTarget()}. ` +
+        'Check that the backend is running and that the frontend points at ' +
+        'its address.',
       { kind: 'network' },
     )
   } finally {

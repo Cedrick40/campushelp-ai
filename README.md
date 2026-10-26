@@ -52,6 +52,67 @@ npm run dev                        # http://localhost:5173
 
 Tests: `python manage.py test api` (backend) and `python manage.py run_evaluation` (the evaluation questions; add `--retrieval-only` to run without an AI key).
 
+## Deploy it
+
+Deploy the backend and frontend separately, then point the frontend at the
+backend. The frontend must **not** be built with `VITE_API_BASE_URL`
+pointing at `localhost`, or the deployed page will show "Could not reach the
+CampusHelp AI service".
+
+**Backend (Django, gunicorn)**
+
+Set these environment variables on the host:
+
+| Variable | Example |
+|---|---|
+| `DJANGO_DEBUG` | `False` |
+| `DJANGO_SECRET_KEY` | a long random value |
+| `DJANGO_ALLOWED_HOSTS` | `campushelp-ai-backend.onrender.com` |
+| `AI_API_KEY` | your Gemini key |
+| `FRONTEND_ORIGINS` | `https://campushelp-ai.vercel.app` (comma-separated; setting it locks CORS to those origins) |
+| `FRONTEND_ORIGIN_REGEXES` | `^https://campushelp[a-z0-9-]*\.vercel\.app$` (optional, for Vercel preview URLs) |
+| `CORS_ALLOW_ALL_ORIGINS` | optional override; production defaults to open only when `FRONTEND_ORIGINS` is empty |
+
+Vercel gives every deployment a unique preview URL, but the production domain
+(e.g. `campushelp.vercel.app`) does not change. Use the production domain in
+`FRONTEND_ORIGINS`, or add the preview regex above. Point
+`VITE_API_BASE_URL` at the backend's stable production domain, never at a
+Vercel preview URL.
+
+Build/start commands (run from `backend/`):
+
+```bash
+pip install -r requirements.txt
+python manage.py collectstatic --noinput
+python manage.py migrate
+python manage.py ingest          # loads documents/ + metadata/documents.json
+gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+```
+
+`python manage.py ingest` must run on the deployed machine, because the
+SQLite database is not committed. If the host uses an ephemeral filesystem,
+run it on every deploy (it is idempotent). Health check: `GET /api/health/`.
+
+If the host deploys only `backend/`, either copy `documents/` and
+`metadata/` into the deployment or point `DOCUMENTS_DIR` at their location.
+The included `render.yaml` keeps Render rooted at the repository root so
+`documents/` and `metadata/` are available; do not set Render's Root
+Directory to `backend/` unless you move those folders too.
+
+**Frontend (static build)**
+
+Set the backend address, then build:
+
+```bash
+cd frontend
+VITE_API_BASE_URL=https://campushelp-ai-backend.onrender.com npm run build
+```
+
+The committed `frontend/.env.production` already points production builds at
+that backend and raises the timeout for Render's free-tier cold starts. Update
+it if the backend URL changes. Alternatively edit `apiBaseUrl` in the deployed
+`config.js` (copied from `frontend/public/config.js`) without rebuilding.
+
 ## Project structure
 
 ```

@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 urlpatterns = [
+    path("health/", views.health),
     path("ask/", views.ask),
     path("corpus/", views.corpus),
     path("documents/<str:pk>/file/", views.document_file),

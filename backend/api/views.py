@@ -121,6 +121,13 @@ def ask(request):
     ))
 
 
+@extend_schema(exclude=True)
+@api_view(["GET"])
+def health(request):
+    """Liveness probe for the deployment platform."""
+    return Response({"status": "ok", "service": "campushelp-ai"})
+
+
 @extend_schema(responses=CorpusSerializer)
 @api_view(["GET"])
 def corpus(request):

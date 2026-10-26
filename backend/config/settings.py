@@ -142,22 +142,90 @@ SPECTACULAR_SETTINGS = {
 
 
 
-# --- Environment overrides (read from backend/.env) ---
+# --- Environment overrides (read from backend/.env or the host) ---
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv(BASE_DIR / ".env")
 
+
+def env_bool(name: str, default: bool = False) -> bool:
+    """Read a boolean from the environment; accepts true/1/yes/on."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_list(name: str, default: str = "") -> list[str]:
+    """Read a comma-separated environment value as a clean list."""
+    raw = os.environ.get(name, default)
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-dev-only-change-me")
-DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
-CORS_ALLOWED_ORIGINS = [
-    os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173"),
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
+DEBUG = env_bool("DJANGO_DEBUG", False)
+
+# Hosts: set DJANGO_ALLOWED_HOSTS in production (comma-separated, or "*").
+# The hostnames injected by common platforms are added automatically so a
+# first deploy does not fail with DisallowedHost.
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver")
+for platform_host in (
+    os.environ.get("RENDER_EXTERNAL_HOSTNAME"),
+    os.environ.get("RAILWAY_PUBLIC_DOMAIN"),
+    os.environ.get("VERCEL_URL"),
+):
+    if platform_host and platform_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(platform_host)
+
+# CORS: the frontend is normally on a different origin from the API.
+# FRONTEND_ORIGINS takes a comma-separated list (FRONTEND_ORIGIN still works
+# for one origin). Production defaults to open CORS because this API is
+# public, read-only and sends no credentials; set CORS_ALLOW_ALL_ORIGINS=false
+# and list the frontend origins to lock it down.
+FRONTEND_ORIGINS = [
+    origin.rstrip("/")
+    for origin in env_list(
+        "FRONTEND_ORIGINS", os.environ.get("FRONTEND_ORIGIN", "")
+    )
 ]
-DOCUMENTS_DIR = BASE_DIR.parent / "documents"
+CORS_ALLOWED_ORIGINS = list(dict.fromkeys(
+    FRONTEND_ORIGINS + ["http://localhost:5173", "http://127.0.0.1:5173"]
+))
+CORS_ALLOWED_ORIGIN_REGEXES = env_list("FRONTEND_ORIGIN_REGEXES")
+CORS_ALLOW_ALL_ORIGINS = env_bool(
+    "CORS_ALLOW_ALL_ORIGINS", not DEBUG and not FRONTEND_ORIGINS
+)
 CORS_ALLOW_CREDENTIALS = False
-ALLOWED_HOSTS = [
-    h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h
-]
+
+CSRF_TRUSTED_ORIGINS = env_list(
+    "CSRF_TRUSTED_ORIGINS", ",".join(CORS_ALLOWED_ORIGINS)
+)
+for trusted_host in ALLOWED_HOSTS:
+    if trusted_host in {"localhost", "127.0.0.1", "testserver"} or "*" in trusted_host:
+        continue
+    origin = f"https://{trusted_host}"
+    if origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
+
+DOCUMENTS_DIR = Path(
+    os.environ.get("DOCUMENTS_DIR") or (BASE_DIR.parent / "documents")
+)
+
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    },
+}
+
+# Behind a TLS-terminating proxy (Render, Railway, Heroku, nginx).
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", True)
+    SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", True)
+    CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", True)
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "3600"))

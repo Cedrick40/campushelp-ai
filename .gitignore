@@ -1,6 +1,7 @@
 .env
 .env.*
 !.env.example
+!frontend/.env.production
 .venv/
 /devpost/learner-profile.md
 __pycache__/

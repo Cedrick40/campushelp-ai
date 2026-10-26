@@ -67,6 +67,18 @@ The backend address lives in `VITE_API_BASE_URL` rather than in the source so
 that the same build can point at a laptop, a teammate's machine or a deployed
 host without a code change.
 
+For deployments there is also a runtime file, `public/config.js`, copied to
+`dist/config.js`. Editing `apiBaseUrl` there changes the backend address
+without rebuilding:
+
+```js
+window.CAMPUSHELP_CONFIG = { apiBaseUrl: 'https://campushelp-api.onrender.com' }
+```
+
+A production build made with `VITE_API_BASE_URL=http://localhost:8000` cannot
+work online: the browser on the student's machine tries its own localhost.
+Set the deployed backend origin at build time or in `config.js`.
+
 ## Mock first, real API second
 
 The interface was built against a mock before the backend existed, and the
