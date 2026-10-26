@@ -78,12 +78,15 @@ serverless functions, so the public proxy prefix is `/proxy-api`:
 {
   "rewrites": [
     {
-      "source": "/proxy-api/:path*",
-      "destination": "https://campushelp-ai.onrender.com/api/:path*"
+      "source": "/proxy-api/(.*)",
+      "destination": "https://campushelp-ai.onrender.com/api/$1"
     }
   ]
 }
 ```
+
+The `(.*)` capture keeps trailing slashes, which Django's `/api/health/` and
+`/api/ask/` routes require.
 
 For deployments there is also a runtime file, `public/config.js`, copied to
 `dist/config.js`. Editing `apiBaseUrl` there changes the backend address
