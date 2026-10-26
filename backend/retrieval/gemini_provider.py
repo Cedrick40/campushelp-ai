@@ -18,7 +18,10 @@ import time
 from pathlib import Path
 
 
-DEFAULT_MODEL = "gemini-3.6-flash"
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
+# Free-tier daily quotas are per model, so a fallback keeps the demo usable
+# when the primary model's quota is exhausted or the model is overloaded.
+FALLBACK_MODELS = ("gemini-3.1-flash-lite", "gemini-3.8-flash")
 REQUEST_TIMEOUT_MS = int(os.environ.get("AI_TIMEOUT_MS") or 120_000)
 
 # The Gemini Developer API free tier returns 429 (and occasionally 5xx) under
@@ -82,6 +85,14 @@ def configured_api_key() -> str | None:
 
 def model_name() -> str:
     return (os.environ.get("AI_MODEL") or DEFAULT_MODEL).strip() or DEFAULT_MODEL
+
+
+def model_candidates() -> list[str]:
+    """Primary model plus fallbacks, unless AI_MODEL pins a specific model."""
+    primary = model_name()
+    if os.environ.get("AI_MODEL"):
+        return [primary]
+    return [primary, *[model for model in FALLBACK_MODELS if model != primary]]
 
 
 def build_contents(question: str, evidence: list[dict]) -> str:
@@ -179,6 +190,12 @@ def _retry_delay(error: Exception, attempt: int) -> float | None:
     if status != 429 and not (500 <= status < 600):
         return None
 
+    message = str(error).lower()
+
+    # A daily quota cannot recover in a few seconds; move to the next model.
+    if status == 429 and ("per day" in message or "perday" in message):
+        return None
+
     retry_after = None
 
     response = getattr(error, "response", None)
@@ -198,6 +215,13 @@ def _retry_delay(error: Exception, attempt: int) -> float | None:
     return delay + random.uniform(0, delay / 4)
 
 
+def _should_try_next_model(error: Exception) -> bool:
+    status = getattr(error, "code", None) or getattr(error, "status_code", None)
+    return status == 404 or status == 429 or (
+        isinstance(status, int) and 500 <= status < 600
+    )
+
+
 def _generate_with_retry(api_key: str, prompt: str) -> str:
     from google.genai import types
 
@@ -207,21 +231,29 @@ def _generate_with_retry(api_key: str, prompt: str) -> str:
         response_mime_type="application/json",
     )
 
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        try:
-            response = client.models.generate_content(
-                model=model_name(), contents=prompt, config=config
-            )
-            return response.text
-        except Exception as error:
-            delay = _retry_delay(error, attempt)
+    last_error = None
 
-            if delay is None or attempt == MAX_ATTEMPTS:
+    for model in model_candidates():
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            try:
+                response = client.models.generate_content(
+                    model=model, contents=prompt, config=config
+                )
+                return response.text
+            except Exception as error:
+                last_error = error
+                delay = _retry_delay(error, attempt)
+
+                if delay is not None and attempt < MAX_ATTEMPTS:
+                    time.sleep(delay)
+                    continue
+
+                if _should_try_next_model(error):
+                    break
+
                 raise
 
-            time.sleep(delay)
-
-    raise RuntimeError("unreachable")
+    raise last_error or RuntimeError("unreachable")
 
 
 def gemini_provider(question: str, evidence: list[dict]) -> dict:

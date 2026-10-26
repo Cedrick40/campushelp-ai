@@ -97,8 +97,9 @@ def _exact_answer(answer: str, citations: list[str], evidence: list[dict]) -> st
 
     normalized_answer = _normalize_text(answer)
 
-    if any(normalized_answer == _normalize_text(p["text"]) for p in cited):
-        return answer
+    for passage in cited:
+        if normalized_answer == _normalize_text(passage["text"]):
+            return _normalize_text(passage["text"])
 
     answer_terms = _tokens(answer)
     best = cited[0]
