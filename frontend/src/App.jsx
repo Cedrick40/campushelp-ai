@@ -3,6 +3,7 @@ import ChatMessage from './components/ChatMessage.jsx'
 import QuestionBox from './components/QuestionBox.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import AuthModal from './components/AuthModal.jsx'
+import UserMenu from './components/UserMenu.jsx'
 import { MenuIcon, MoonIcon, SunIcon } from './components/icons.jsx'
 import { welcomeMessage } from './greeting.js'
 import {
@@ -417,6 +418,14 @@ export default function App() {
                 )}
               </button>
 
+              {!isRestoring && user ? (
+                <UserMenu
+                  user={user}
+                  accountName={accountName}
+                  onLogout={handleLogout}
+                />
+              ) : null}
+
               {!isRestoring && !user ? (
                 <div className="authButtons">
                   <button
@@ -440,13 +449,21 @@ export default function App() {
         </header>
 
         {messages.length === 0 ? (
-          <section className="heroBanner" aria-labelledby="heroTitle">
+          <section
+            className={`heroBanner${user ? ' heroBanner--account' : ''}`}
+            aria-labelledby={user ? undefined : 'heroTitle'}
+            aria-label={user ? 'Account home' : undefined}
+          >
             <div className="heroBanner__content">
               {greeting ? <p className="heroGreeting">{greeting}</p> : null}
-              <span className="heroBadge">Official Reference Assistant</span>
-              <h2 id="heroTitle" className="heroTitle">
-                Your Grounded Guide to University Information
-              </h2>
+              {!user ? (
+                <>
+                  <span className="heroBadge">Official Reference Assistant</span>
+                  <h2 id="heroTitle" className="heroTitle">
+                    Your Grounded Guide to University Information
+                  </h2>
+                </>
+              ) : null}
               <p className="heroSubtitle">
                 Ask about rules, fees, and dates, and get direct answers built
                 strictly from approved {university ?? 'campus'} documents.

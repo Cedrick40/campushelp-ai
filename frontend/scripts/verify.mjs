@@ -584,6 +584,130 @@ async function browserChecksMock(driver) {
   )
 }
 
+async function browserChecksAccount(driver) {
+  await driver.addInitScript(`
+    (() => {
+      try {
+        window.localStorage.setItem('campushelp.auth.token', 'verify-token');
+      } catch {}
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = (input, init) => {
+        const url = typeof input === 'string' ? input : input?.url || '';
+        const json = (body) =>
+          Promise.resolve(
+            new Response(JSON.stringify(body), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          );
+        if (url.includes('/api/auth/me/')) {
+          return json({ id: 1, name: 'Ezra Banda', email: 'ezra@example.com' });
+        }
+        if (url.includes('/api/auth/logout/')) {
+          return Promise.resolve(new Response('', { status: 204 }));
+        }
+        if (url.includes('/api/history/')) return json([]);
+        return originalFetch(input, init);
+      };
+    })();
+  `)
+
+  await driver.setViewport(1280, 900)
+  await driver.navigate('http://127.0.0.1:' + PORT + '/')
+  await driver.waitFor("!!document.querySelector('.userMenu__trigger')", 20000)
+  await new Promise((resolve) => setTimeout(resolve, 300))
+
+  check(
+    'a signed-in account shows a profile in the header',
+    (await driver.evaluate("!!document.querySelector('.chatHeader .userMenu__trigger')")) === true,
+  )
+  check(
+    'the profile names the signed-in user',
+    (await driver.evaluate(driver.text('.userMenu__trigger'))).includes('Ezra Banda'),
+  )
+  check(
+    'guest auth buttons are replaced by the profile',
+    (await driver.evaluate("!!document.querySelector('.chatHeader .authButtons')")) === false,
+  )
+
+  const accountHero = await driver.evaluate(`(() => {
+    const hero = document.querySelector('.heroBanner');
+    return {
+      className: hero?.className || '',
+      background: hero ? getComputedStyle(hero).backgroundImage : '',
+      height: hero?.getBoundingClientRect().height ?? 0,
+      text: hero?.innerText || '',
+    };
+  })()`)
+  check(
+    'the signed-in hero no longer shows the photo',
+    accountHero.className.includes('heroBanner--account') &&
+      !accountHero.background.includes('ezra.jpg'),
+    accountHero.background,
+  )
+  check(
+    'the signed-in hero is compact and greets the student',
+    accountHero.height < 220 && accountHero.text.includes('Welcome back, Ezra Banda'),
+    `${accountHero.height.toFixed(1)}px`,
+  )
+  check(
+    'the guest hero headline is hidden when signed in',
+    !accountHero.text.includes('Grounded Guide'),
+  )
+
+  await driver.evaluate("document.querySelector('.userMenu__trigger').click()")
+  await driver.waitFor("!!document.querySelector('.userMenu__panel')", 3000)
+  const menuText = await driver.evaluate(driver.text('.userMenu__panel'))
+  check(
+    'the profile menu shows the user email',
+    menuText.includes('ezra@example.com'),
+    menuText,
+  )
+  check('the profile menu offers logout', menuText.includes('Log out'))
+
+  await driver.setViewport(390, 844)
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  const mobileProfile = await driver.evaluate(`(() => {
+    const trigger = document.querySelector('.userMenu__trigger');
+    const name = document.querySelector('.userMenu__name');
+    const panel = document.querySelector('.userMenu__panel');
+    const triggerBox = trigger?.getBoundingClientRect();
+    const panelBox = panel?.getBoundingClientRect();
+    return {
+      triggerVisible: !!triggerBox && triggerBox.width > 0 && triggerBox.right <= window.innerWidth,
+      nameHidden: name ? getComputedStyle(name).display === 'none' : false,
+      panelInside:
+        !!panelBox && panelBox.left >= 0 && panelBox.right <= window.innerWidth,
+    };
+  })()`)
+  check(
+    'the profile collapses to an avatar on a small screen',
+    mobileProfile.triggerVisible && mobileProfile.nameHidden,
+  )
+  check('the profile menu stays inside a small screen', mobileProfile.panelInside)
+
+  await driver.setViewport(1280, 900)
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  await driver.evaluate("document.querySelector('.userMenu__logout').click()")
+  await driver.waitFor(
+    "!!document.querySelector('.chatHeader .authButtons') && !document.querySelector('.userMenu__trigger')",
+    5000,
+  )
+  const guestHero = await driver.evaluate(`(() => {
+    const hero = document.querySelector('.heroBanner');
+    return {
+      className: hero?.className || '',
+      background: hero ? getComputedStyle(hero).backgroundImage : '',
+    };
+  })()`)
+  check(
+    'logging out restores the guest photo hero',
+    !guestHero.className.includes('heroBanner--account') &&
+      guestHero.background.includes('ezra.jpg'),
+    guestHero.background,
+  )
+}
+
 async function browserChecksLive(driver) {
   await driver.navigate(ALLOWED_ORIGIN + '/')
   await driver.waitFor("!!document.querySelector('.ask__input')", 20000)
@@ -710,6 +834,7 @@ if (browsersDisabled) {
   `)
   try {
     await browserChecksMock(chrome)
+    await browserChecksAccount(chrome)
     const pageErrors = await chrome.evaluate('window.__errors.join(" | ")')
     check('no uncaught errors in the page', !pageErrors, pageErrors)
   } catch (error) {
