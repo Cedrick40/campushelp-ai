@@ -178,7 +178,8 @@ src/
 ├── api.js                  fetch wrappers, token auth, history, normalisation
 ├── mockApi.js              mock Q&A backend used when VITE_USE_MOCK=true
 ├── format.js               date and history timestamp formatting
-├── styles.css              all styling, no UI framework
+├── greeting.js             time-based registration and login greetings
+├── styles.css              all styling, light/dark tokens, no UI framework
 └── components/
     ├── Banner.jsx          sample-data vs official-documents notice
     ├── QuestionBox.jsx     input, submit, examples, validation, loading
@@ -189,9 +190,10 @@ src/
     └── SourceCard.jsx      title, section, date, page, excerpt, link
 
 public/
-├── campus-photo.jpeg      page background and welcome-card photo
+├── cesd-logo.png          CESD crest used in the header
+├── ezra.jpg               page background and full-width hero photo
 ├── config.js              runtime API override
-└── favicon.svg            brand mark
+└── favicon.png            crest favicon
 ```
 
 ## Behaviour notes
@@ -199,8 +201,12 @@ public/
 - Empty or whitespace-only questions are rejected before any request is sent.
 - Questions are limited to 500 characters, checked on the client and again by
   the backend.
-- Example questions fill the box and submit immediately; the third one is the
-  question the documents do not cover, so the honest fallback is one click.
+- Example questions submit immediately; the third one is the question the
+  documents do not cover, so the honest fallback is one click.
+- Registration greets the new student with a time-of-day message and their
+  name; a restored session or login says "Welcome back" instead.
+- The header theme toggle switches between light and dark, follows the system
+  preference on a first visit, and remembers the choice in `localStorage`.
 - Every state carries a written label ("Answer", "Not verified", "Sources
   disagree", "Request failed"), so the states never depend on colour alone.
 - Source links that come back as paths (for example

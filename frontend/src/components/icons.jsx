@@ -22,29 +22,27 @@ function Icon({ children, size = 16, className = '' }) {
   )
 }
 
-export function LogoIcon({ size = 28, className = '' }) {
+export function SunIcon(props) {
   return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <rect width="32" height="32" rx="9" fill="#1D4ED8" />
-      <path
-        d="M10 8H20C21.1046 8 22 8.89543 22 10V22C22 23.1046 21.1046 24 20 24H10C8.89543 24 8 23.1046 8 22V10C8 8.89543 8.89543 8 10 8Z"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path d="M12 12H18" stroke="white" strokeWidth="2" strokeLinecap="round" />
-      <path d="M12 16H18" stroke="white" strokeWidth="2" strokeLinecap="round" />
-      <path d="M12 20H15" stroke="white" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="21" cy="11" r="2.5" fill="#60A5FA" stroke="#1D4ED8" strokeWidth="1.5" />
-    </svg>
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.41 1.41" />
+      <path d="m17.66 17.66 1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.34 17.66-1.41 1.41" />
+      <path d="m19.07 4.93-1.41 1.41" />
+    </Icon>
+  )
+}
+
+export function MoonIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M20.6 15.1A8.5 8.5 0 0 1 8.9 3.4 8.5 8.5 0 1 0 20.6 15.1Z" />
+    </Icon>
   )
 }
 

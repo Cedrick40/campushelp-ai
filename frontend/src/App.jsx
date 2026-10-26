@@ -4,7 +4,8 @@ import ChatMessage from './components/ChatMessage.jsx'
 import QuestionBox from './components/QuestionBox.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import AuthModal from './components/AuthModal.jsx'
-import { LogoIcon, MenuIcon } from './components/icons.jsx'
+import { MenuIcon, MoonIcon, SunIcon } from './components/icons.jsx'
+import { welcomeMessage } from './greeting.js'
 import {
   askQuestion,
   clearHistory as clearSavedHistory,
@@ -35,6 +36,23 @@ const EXAMPLE_QUESTIONS = [
 ]
 
 const HISTORY_ERROR = 'Your saved history could not be loaded. Please try again.'
+const THEME_KEY = 'campushelp.theme'
+
+function initialTheme() {
+  const saved = document.documentElement.dataset.theme
+  if (saved === 'light' || saved === 'dark') return saved
+
+  try {
+    const stored = window.localStorage.getItem(THEME_KEY)
+    if (stored === 'light' || stored === 'dark') return stored
+  } catch {
+    // Storage can be blocked; fall back to the system preference.
+  }
+
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light'
+}
 
 export default function App() {
   const [corpus, setCorpus] = useState(null)
@@ -47,10 +65,26 @@ export default function App() {
   const [chatHistory, setChatHistory] = useState([])
   const [historyError, setHistoryError] = useState(null)
   const [isRestoring, setIsRestoring] = useState(true)
+  const [theme, setTheme] = useState(initialTheme)
+  const [greeting, setGreeting] = useState('')
 
   const requestId = useRef(0)
   const nextId = useRef(0)
   const scrollRef = useRef(null)
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    document.documentElement.style.colorScheme = theme
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', theme === 'dark' ? '#0b1120' : '#ffffff')
+
+    try {
+      window.localStorage.setItem(THEME_KEY, theme)
+    } catch {
+      // The chosen theme still applies to this page when storage is blocked.
+    }
+  }, [theme])
 
   useEffect(() => {
     let active = true
@@ -70,6 +104,7 @@ export default function App() {
         const restored = await restoreSession()
         if (!active || !restored) return
         setUser(restored)
+        setGreeting(welcomeMessage('login', restored))
         try {
           const entries = await fetchHistory()
           if (active) setChatHistory(entries)
@@ -202,6 +237,7 @@ export default function App() {
         : await loginAccount(credentials)
 
     setUser(authenticated)
+    setGreeting(welcomeMessage(mode, authenticated))
     setAuthModal(null)
     setHistoryError(null)
 
@@ -219,6 +255,7 @@ export default function App() {
     setIsLoading(false)
     await logoutAccount()
     setUser(null)
+    setGreeting('')
     setAuthModal(null)
     setIsSidebarOpen(false)
     setChatHistory([])
@@ -319,12 +356,36 @@ export default function App() {
               ) : null}
 
               <div className="brandLogoWrap">
-                <LogoIcon size={28} className="brandLogoIcon" />
+                <img
+                  className="brandLogoIcon"
+                  src="/cesd-logo.png"
+                  alt=""
+                  width="40"
+                  height="40"
+                />
                 <h1 className="masthead__title">CampusHelp AI</h1>
               </div>
             </div>
 
             <div className="chatHeader__actions">
+              <button
+                className="iconButton themeToggle"
+                type="button"
+                onClick={() =>
+                  setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
+                }
+                aria-label={`Switch to ${
+                  theme === 'dark' ? 'light' : 'dark'
+                } mode`}
+                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              >
+                {theme === 'dark' ? (
+                  <SunIcon size={18} />
+                ) : (
+                  <MoonIcon size={18} />
+                )}
+              </button>
+
               {!isRestoring && !user ? (
                 <div className="authButtons">
                   <button
@@ -347,6 +408,22 @@ export default function App() {
           </div>
         </header>
 
+        {messages.length === 0 ? (
+          <section className="heroBanner" aria-labelledby="heroTitle">
+            <div className="heroBanner__content">
+              {greeting ? <p className="heroGreeting">{greeting}</p> : null}
+              <span className="heroBadge">Official Reference Assistant</span>
+              <h2 id="heroTitle" className="heroTitle">
+                Your Grounded Guide to University Information
+              </h2>
+              <p className="heroSubtitle">
+                Ask about rules, fees, and dates, and get direct answers built
+                strictly from approved {university ?? 'campus'} documents.
+              </p>
+            </div>
+          </section>
+        ) : null}
+
         <main className="chat">
           <div
             className="chat__scroll"
@@ -357,20 +434,6 @@ export default function App() {
           >
             {messages.length === 0 ? (
               <div className="welcomeSection">
-                <div className="heroCard">
-                  <div className="heroCard__content">
-                    <span className="heroBadge">Official Reference Assistant</span>
-                    <h2 className="heroTitle">
-                      Your Grounded Guide to University Information
-                    </h2>
-                    <p className="heroSubtitle">
-                      Ask about rules, fees, and dates, and get direct answers
-                      built strictly from approved {university ?? 'campus'}{' '}
-                      documents.
-                    </p>
-                  </div>
-                </div>
-
                 <div className="aboutCard">
                   <h3 className="aboutCard__heading">What this AI does</h3>
                   <div className="aboutGrid">
@@ -397,6 +460,24 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+
+                <div className="welcomeExamples">
+                  <h3 className="examples__heading">Try asking</h3>
+                  <ul className="examples__list">
+                    {EXAMPLE_QUESTIONS.map((example) => (
+                      <li key={example.question}>
+                        <button
+                          className="examples__button"
+                          type="button"
+                          onClick={() => handleAsk(example.question)}
+                          disabled={isLoading}
+                        >
+                          {example.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             ) : (
               messages.map((message) => (
@@ -410,12 +491,7 @@ export default function App() {
           </div>
 
           <div className="chat__composerWrap">
-            <QuestionBox
-              examples={EXAMPLE_QUESTIONS}
-              showExamples={messages.length === 0}
-              isLoading={isLoading}
-              onAsk={handleAsk}
-            />
+            <QuestionBox isLoading={isLoading} onAsk={handleAsk} />
           </div>
         </main>
 

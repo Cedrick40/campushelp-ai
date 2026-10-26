@@ -251,6 +251,7 @@ async function browserChecksMock(driver) {
     const scroll = box('.chat__scroll');
     const composer = box('.chat__composerWrap');
     const logo = box('.brandLogoIcon');
+    const hero = box('.heroBanner');
     return {
       mainWidth: main?.width ?? 0,
       headerWidth: header?.width ?? 0,
@@ -258,8 +259,13 @@ async function browserChecksMock(driver) {
       scrollWidth: scroll?.width ?? 0,
       composerWidth: composer?.width ?? 0,
       logoWidth: logo?.width ?? 0,
+      logoSource: document.querySelector('.brandLogoIcon')?.getAttribute('src') || '',
+      logoLoaded: (document.querySelector('.brandLogoIcon')?.naturalWidth ?? 0) > 0,
+      heroWidth: hero?.width ?? 0,
+      heroHeight: hero?.height ?? 0,
+      heroRadius: hero ? getComputedStyle(document.querySelector('.heroBanner')).borderTopLeftRadius : '',
       background: getComputedStyle(document.querySelector('.page')).backgroundImage,
-      heroBackground: getComputedStyle(document.querySelector('.heroCard')).backgroundImage,
+      heroBackground: hero ? getComputedStyle(document.querySelector('.heroBanner')).backgroundImage : '',
     };
   })()`)
 
@@ -268,8 +274,18 @@ async function browserChecksMock(driver) {
   check('composer fills the available width', Math.abs(layout.composerWidth - layout.mainWidth) < 2, `${layout.composerWidth} / ${layout.mainWidth}`)
   check('brand and menu are anchored to the left', layout.brandLeft < 96, `${layout.brandLeft}px from the main edge`)
   check('brand logo is visible', layout.logoWidth > 0, `${layout.logoWidth}px`)
-  check('campus photo is applied to the page', layout.background.includes('campus-photo.jpeg'), layout.background)
-  check('campus photo is applied to the welcome card', layout.heroBackground.includes('campus-photo.jpeg'), layout.heroBackground)
+  check(
+    'custom crest logo is loaded',
+    layout.logoSource.includes('cesd-logo.png') && layout.logoLoaded,
+    layout.logoSource,
+  )
+  check('campus photo is applied to the page', layout.background.includes('ezra.jpg'), layout.background)
+  check('campus photo is applied to the hero', layout.heroBackground.includes('ezra.jpg'), layout.heroBackground)
+  check(
+    'photo hero is full width and uncarded',
+    layout.heroWidth === layout.mainWidth && layout.heroRadius === '0px' && layout.heroHeight > 200,
+    `${layout.heroWidth}px wide, ${layout.heroHeight}px high, radius ${layout.heroRadius}`,
+  )
   check(
     'logout is not duplicated in the header',
     (await driver.evaluate("!!document.querySelector('.chatHeader .authButton--text')")) === false,
@@ -328,8 +344,31 @@ async function browserChecksMock(driver) {
 
   check(
     'the conversation starts with the welcome message',
-    (await driver.evaluate(driver.text('.welcomeSection'))).includes('Grounded Guide'),
+    (await driver.evaluate(driver.text('.heroBanner'))).includes('Grounded Guide'),
   )
+  check(
+    'the light/dark toggle is available',
+    (await driver.evaluate("!!document.querySelector('.themeToggle')")) === true,
+  )
+  const themeBefore = await driver.evaluate('document.documentElement.dataset.theme')
+  await driver.evaluate("document.querySelector('.themeToggle').click()")
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  const themeAfter = await driver.evaluate('document.documentElement.dataset.theme')
+  check(
+    'the theme toggle switches mode',
+    (themeBefore === 'light' || themeBefore === 'dark') &&
+      (themeAfter === 'light' || themeAfter === 'dark') &&
+      themeAfter !== themeBefore,
+    `${themeBefore} -> ${themeAfter}`,
+  )
+  check(
+    'the theme choice is saved',
+    (await driver.evaluate(
+      "localStorage.getItem('campushelp.theme')",
+    )) === themeAfter,
+  )
+  await driver.evaluate("document.querySelector('.themeToggle').click()")
+  await new Promise((resolve) => setTimeout(resolve, 200))
   check(
     'a guest can log in or register',
     (await driver.evaluate("document.querySelectorAll('.authButtons .authButton').length")) === 2,
@@ -373,6 +412,7 @@ async function browserChecksMock(driver) {
     'clicking an example adds the question to the conversation',
     (await driver.evaluate(driver.text('.message--user .bubble--user'))).includes('register for exams'),
   )
+  await driver.waitFor("!!document.querySelector('.answer--loading')", 4000)
   check(
     'a loading state is visible while waiting',
     (await driver.evaluate("!!document.querySelector('.answer--loading')")) === true,
@@ -499,6 +539,33 @@ async function browserChecksLive(driver) {
 
 
 
+// ------------------------------------------------------- 4. greeting copy
+
+function contractChecksGreeting(greeting) {
+  const morning = new Date(2026, 0, 1, 9, 0)
+  const afternoon = new Date(2026, 0, 1, 14, 0)
+  const evening = new Date(2026, 0, 1, 20, 0)
+
+  check(
+    'registration greets the new student by name in the morning',
+    greeting.welcomeMessage('register', { name: 'Ezra' }, morning) === 'Good morning, Ezra',
+  )
+  check(
+    'registration greeting changes with the time of day',
+    greeting.welcomeMessage('register', { name: 'Ezra' }, afternoon) === 'Good afternoon, Ezra' &&
+      greeting.welcomeMessage('register', { name: 'Ezra' }, evening) === 'Good evening, Ezra',
+  )
+  check(
+    'login welcomes a returning student back',
+    greeting.welcomeMessage('login', { name: 'Ezra' }, morning) === 'Welcome back, Ezra',
+  )
+  check(
+    'the greeting falls back to the email name',
+    greeting.welcomeMessage('login', { email: 'ezra@example.com' }, morning) ===
+      'Welcome back, ezra',
+  )
+}
+
 // ------------------------------------------------------------------- run
 
 const errors = []
@@ -513,6 +580,8 @@ let server = await startVite({ mock: true, baseUrl: BASE_URL })
 try {
   const api = await server.ssrLoadModule('/src/api.js')
   await contractChecksMock(api)
+  const greeting = await server.ssrLoadModule('/src/greeting.js')
+  contractChecksGreeting(greeting)
 } catch (error) {
   errors.push(`mock contract checks crashed: ${error.message}`)
 }

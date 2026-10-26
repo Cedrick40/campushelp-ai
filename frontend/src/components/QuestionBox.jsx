@@ -3,14 +3,12 @@ import { MAX_QUESTION_LENGTH } from '../api.js'
 import { MicIcon, SendIcon } from './icons.jsx'
 
 /**
- * The chat composer: a growing textarea, a send button, client-side
- * validation, and (while the conversation is empty) clickable example
- * questions.
+ * The chat composer: a growing textarea, a send button and client-side
+ * validation.
  *
- * Enter sends, Shift+Enter adds a new line. Examples submit immediately so
- * the honest fallback is one click away in the demo.
+ * Enter sends, Shift+Enter adds a new line.
  */
-export default function QuestionBox({ examples, showExamples, isLoading, onAsk }) {
+export default function QuestionBox({ isLoading, onAsk }) {
   const [value, setValue] = useState('')
   const [validationError, setValidationError] = useState(null)
   const [isListening, setIsListening] = useState(false)
@@ -165,12 +163,6 @@ export default function QuestionBox({ examples, showExamples, isLoading, onAsk }
     if (!isLoading) submit(value)
   }
 
-  function handleExample(example) {
-    if (isLoading) return
-    setValue(example.question)
-    submit(example.question)
-  }
-
   const feedback = validationError || voiceError
 
   return (
@@ -178,26 +170,6 @@ export default function QuestionBox({ examples, showExamples, isLoading, onAsk }
       <h2 className="visually-hidden" id="ask-heading">
         Ask a question
       </h2>
-
-      {showExamples ? (
-        <div className="examples">
-          <h3 className="examples__heading">Try asking</h3>
-          <ul className="examples__list">
-            {examples.map((example) => (
-              <li key={example.question}>
-                <button
-                  className="examples__button"
-                  type="button"
-                  onClick={() => handleExample(example)}
-                  disabled={isLoading}
-                >
-                  {example.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
 
       <form onSubmit={handleSubmit} noValidate>
         <div
@@ -217,7 +189,7 @@ export default function QuestionBox({ examples, showExamples, isLoading, onAsk }
             name="question"
             rows={1}
             value={value}
-            placeholder="Ask about fees, registration, complaints…"
+            placeholder="Ask a question…"
             onChange={(event) => {
               setValue(event.target.value)
               if (validationError) setValidationError(null)
