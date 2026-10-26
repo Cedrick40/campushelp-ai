@@ -78,6 +78,7 @@ async function portIsFree(port, host = '127.0.0.1') {
 async function startVite({ mock, baseUrl, port = PORT, host = '127.0.0.1' }) {
   process.env.VITE_USE_MOCK = String(mock)
   process.env.VITE_API_BASE_URL = baseUrl
+  process.env.VITE_API_SAME_ORIGIN = 'false'
   const server = await createServer({
     root,
     configFile: resolve(root, 'vite.config.js'),

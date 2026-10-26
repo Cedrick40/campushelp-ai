@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://campushelp-ai.onrender.com/api/:path*"
+    }
+  ]
+}

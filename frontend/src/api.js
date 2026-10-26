@@ -1,7 +1,11 @@
 /**
  * API layer for CampusHelp AI.
  *
- * The backend address lives in VITE_API_BASE_URL (see frontend/.env).
+ * The backend address lives in VITE_API_BASE_URL (see frontend/.env). Set
+ * VITE_API_SAME_ORIGIN=true when the static host proxies /api to the backend
+ * (Vercel does this in vercel.json); the build then calls /api on its own
+ * origin and ignores any baked backend URL.
+ *
  * Two modes, switched by VITE_USE_MOCK:
  *
  *   VITE_USE_MOCK=true   -> answers come from src/mockApi.js, no backend needed
@@ -36,7 +40,13 @@ const runtimeBaseUrl =
     ? runtimeConfig.apiBaseUrl.trim()
     : ''
 
-const rawBaseUrl = runtimeBaseUrl || import.meta.env?.VITE_API_BASE_URL || ''
+const sameOrigin =
+  String(import.meta.env?.VITE_API_SAME_ORIGIN ?? 'false').toLowerCase() ===
+  'true'
+
+const rawBaseUrl =
+  runtimeBaseUrl ||
+  (sameOrigin ? '' : import.meta.env?.VITE_API_BASE_URL || '')
 
 /** Backend origin without a trailing slash, e.g. "http://localhost:8000". */
 export const API_BASE_URL = String(rawBaseUrl).replace(/\/+$/, '')

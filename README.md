@@ -74,10 +74,16 @@ Set these environment variables on the host:
 | `CORS_ALLOW_ALL_ORIGINS` | optional override; production defaults to open only when `FRONTEND_ORIGINS` is empty |
 
 Vercel gives every deployment a unique preview URL, but the production domain
-(e.g. `campushelp.vercel.app`) does not change. Use the production domain in
-`FRONTEND_ORIGINS`, or add the preview regex above. Point
-`VITE_API_BASE_URL` at the backend's stable production domain, never at a
-Vercel preview URL.
+(e.g. `campushelp-ai.vercel.app`) does not change. Use the production domain
+in `FRONTEND_ORIGINS`, or add the preview regex above.
+
+The Vercel deployment calls the API on its own origin: `frontend/vercel.json`
+rewrites `/api/*` to the stable backend domain. The frontend build therefore
+sets `VITE_API_SAME_ORIGIN=true` and does not expose the backend URL to the
+browser. This avoids CORS and works when a student's network can reach Vercel
+but not the backend host directly. If you deploy the frontend somewhere
+without that rewrite, set `VITE_API_BASE_URL` to the deployed backend origin
+instead.
 
 Build/start commands (run from `backend/`):
 
@@ -101,17 +107,20 @@ Directory to `backend/` unless you move those folders too.
 
 **Frontend (static build)**
 
-Set the backend address, then build:
+Build normally:
 
 ```bash
 cd frontend
-VITE_API_BASE_URL=https://campushelp-ai.onrender.com npm run build
+npm run build
 ```
 
-The committed `frontend/.env.production` already points production builds at
-that backend and raises the timeout for Render's free-tier cold starts. Update
-it if the backend URL changes. Alternatively edit `apiBaseUrl` in the deployed
-`config.js` (copied from `frontend/public/config.js`) without rebuilding.
+The committed `frontend/.env.production` makes the app call `/api` on its own
+origin, and `frontend/vercel.json` proxies `/api/*` to
+`https://campushelp-ai.onrender.com`. It also raises the timeout for Render's
+free-tier cold starts. If the backend URL changes, update the rewrite target
+in `frontend/vercel.json`. Alternatively edit `apiBaseUrl` in the deployed
+`config.js` (copied from `frontend/public/config.js`) to bypass the proxy
+without rebuilding.
 
 ## Project structure
 

@@ -60,12 +60,29 @@ committed. `.env` is gitignored; `.env.example` is the template.
 | Variable | Meaning | Default |
 |---|---|---|
 | `VITE_API_BASE_URL` | Backend origin, e.g. `http://localhost:8000` | `""` (same origin) |
+| `VITE_API_SAME_ORIGIN` | `true` = call `/api` on the page's own origin and ignore `VITE_API_BASE_URL` | `false` |
 | `VITE_USE_MOCK` | `true` = answer from the local mock, `false` = call the backend | `false` |
 | `VITE_REQUEST_TIMEOUT_MS` | Request timeout in milliseconds | `30000` |
 
 The backend address lives in `VITE_API_BASE_URL` rather than in the source so
 that the same build can point at a laptop, a teammate's machine or a deployed
 host without a code change.
+
+Production builds set `VITE_API_SAME_ORIGIN=true`. Vercel rewrites `/api/*`
+to the Django backend using `vercel.json`, so the browser only talks to the
+Vercel origin. This avoids CORS and works even if the student's network cannot
+reach the backend host directly. The rewrite target is the production backend:
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://campushelp-ai.onrender.com/api/:path*"
+    }
+  ]
+}
+```
 
 For deployments there is also a runtime file, `public/config.js`, copied to
 `dist/config.js`. Editing `apiBaseUrl` there changes the backend address
