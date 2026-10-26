@@ -140,6 +140,29 @@ class GenerationBoundaryTests(unittest.TestCase):
         self.assertTrue(result["message"])
 
     @patch.dict(os.environ, {"AI_API_KEY": "test-key"})
+    def test_conflict_matches_citations_to_document_ids(self):
+        evidence = [
+            {**self.evidence[0], "document_id": "DOC-1"},
+            {**self.evidence[1], "document_id": "DOC-2"},
+        ]
+
+        def conflict_provider(question, evidence):
+            return {
+                "status": "conflicting_sources",
+                "answer": "The two registration documents give different dates.",
+                "cited_source_ids": ["REG-001", "REG-002"],
+                "message": None,
+            }
+
+        result = generate_answer(
+            evidence,
+            "What is the registration deadline?",
+            provider=conflict_provider,
+        )
+        self.assertEqual(result["status"], "conflicting_sources")
+        self.assertEqual(result["cited_source_ids"], ["REG-001", "REG-002"])
+
+    @patch.dict(os.environ, {"AI_API_KEY": "test-key"})
     def test_provider_failure_never_leaks_details(self):
         def broken_provider(question, evidence):
             raise RuntimeError("AI_API_KEY=sk-secret https://provider.internal")

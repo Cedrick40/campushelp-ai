@@ -24,6 +24,13 @@ DEFAULT_TOP_K = 5
 INSUFFICIENT_EVIDENCE = "insufficient_evidence"
 RETRIEVED = "retrieved"
 
+TEMPORAL_HINTS = frozenset(
+    {"when", "deadline", "date", "time", "period", "start", "end", "until"}
+)
+REGISTRATION_TERMS = frozenset(
+    {"registration", "register", "registering", "registered"}
+)
+
 
 def tokenize(text: str) -> set[str]:
     """Convert text into lowercase word tokens (single-character noise dropped)."""
@@ -36,7 +43,36 @@ def tokenize(text: str) -> set[str]:
 
 def query_terms(question: str) -> set[str]:
     """Meaningful question terms: stopwords dropped, per spec."""
-    return tokenize(question) - STOPWORDS
+    tokens = tokenize(question)
+    terms = tokens - STOPWORDS
+
+    # "When is registration?" otherwise matches only the word "registration",
+    # so short section headings outrank the passage containing the deadline.
+    if terms & REGISTRATION_TERMS and tokens & TEMPORAL_HINTS:
+        terms.add("deadline")
+
+    return terms
+
+
+def _is_heading(passage: dict) -> bool:
+    """True for section/title stubs such as "Registration" or "3.1 Registration"."""
+    text = " ".join(str(passage.get("text") or "").split())
+
+    if not text:
+        return True
+
+    normalized = text.casefold()
+    section = " ".join(str(passage.get("section") or "").split()).casefold()
+    title = " ".join(str(passage.get("title") or "").split()).casefold()
+
+    if normalized in {section, title}:
+        return True
+
+    without_section_number = re.sub(r"^\s*\d+(?:\.\d+)*\s*", "", text)
+    return (
+        len(without_section_number.split()) <= 12
+        and not re.search(r"[.!?]", without_section_number)
+    )
 
 
 def retrieve(
@@ -72,7 +108,7 @@ def retrieve(
 
         text = passage.get("text", "")
 
-        if not isinstance(text, str) or not text.strip():
+        if not isinstance(text, str) or not text.strip() or _is_heading(passage):
             continue
 
         overlap = terms & tokenize(text)
@@ -191,6 +227,8 @@ def retrieve_from_connection(
             "?" if cursor.__class__.__module__.startswith("sqlite3") else "%s"
         )
 
+        candidate_limit = max(top_k * 8, top_k + 10)
+
         cursor.execute(
             f"""
             SELECT p.source_id, p.document_id, d.title,
@@ -204,7 +242,7 @@ def retrieve_from_connection(
             ORDER BY rank
             LIMIT {marker}
             """,
-            [_fts_query(terms), top_k],
+            [_fts_query(terms), candidate_limit],
         )
         rows = cursor.fetchall()
         columns = [col[0] for col in cursor.description]
@@ -215,6 +253,10 @@ def retrieve_from_connection(
 
     for row in rows:
         record = dict(zip(columns, row))
+
+        if _is_heading(record):
+            continue
+
         text = record.get("text") or ""
         overlap = terms & tokenize(text)
         record["score"] = round(len(overlap) / len(terms), 4) if terms else 0.0

@@ -22,6 +22,7 @@ from retrieval.evidence_validation import (
     CONFLICT_MESSAGE,
     ERROR_MESSAGE,
     NOT_VERIFIED_MESSAGE,
+    _cited_documents,
     validate_answer_result,
 )
 from retrieval.gemini_provider import (
@@ -161,15 +162,7 @@ def _normalize(raw: dict, evidence: list[dict]) -> dict:
         message = message if message and message.strip() else NOT_VERIFIED_MESSAGE
 
     if status == "conflicting_sources":
-        documents = {
-            passage.get("document_id") or passage.get("source_id")
-            for passage in evidence
-            if isinstance(passage, dict)
-        }
-        documents.discard(None)
-        cited_documents = {c for c in citations if c in documents}
-
-        if len(cited_documents) < 2:
+        if len(_cited_documents(citations, evidence)) < 2:
             status = "insufficient_evidence"
             answer = None
             citations = []

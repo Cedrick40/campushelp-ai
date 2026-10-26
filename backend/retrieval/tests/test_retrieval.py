@@ -104,6 +104,20 @@ class RetrievalTests(unittest.TestCase):
         self.assertEqual(query_terms("the deadline"), {"deadline"})
         self.assertNotIn("the", terms)
 
+    def test_temporal_registration_question_also_searches_for_deadline(self):
+        self.assertEqual(
+            query_terms("When is registration?"),
+            {"registration", "deadline"},
+        )
+        self.assertEqual(
+            query_terms("When do I register?"),
+            {"register", "deadline"},
+        )
+        self.assertEqual(
+            query_terms("registration fees"),
+            {"registration", "fees"},
+        )
+
     def test_empty_passage_list_returns_no_evidence(self):
         results = retrieve("When is registration?", [])
         self.assertEqual(results, [])
