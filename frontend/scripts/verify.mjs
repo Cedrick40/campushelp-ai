@@ -303,7 +303,7 @@ async function browserChecksMock(driver) {
   check(
     'example questions sit near the composer',
     layout.composerTop - layout.welcomeBottom >= 0 &&
-      layout.composerTop - layout.welcomeBottom <= 20,
+      layout.composerTop - layout.welcomeBottom <= 12,
     `${(layout.composerTop - layout.welcomeBottom).toFixed(1)}px gap`,
   )
   check('campus photo is applied to the hero', layout.heroBackground.includes('ezra.jpg'), layout.heroBackground)
