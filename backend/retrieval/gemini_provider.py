@@ -37,9 +37,10 @@ with the question.
 Rules:
 - Use ONLY the evidence passages. Never use outside knowledge.
 - Every source id you cite must appear in the evidence passages.
-- If the passages answer the question: status "answered", a direct answer
-  of at most 3 sentences (the answer first, no preamble), the source ids
-  used in cited_source_ids, message null.
+- If the passages answer the question: status "answered", copy one complete
+  paragraph verbatim from the single cited passage that answers it. Do not
+  paraphrase, summarize, shorten, or merge disconnected passages. Put the
+  source id used in cited_source_ids and set message null.
 - If the passages do not contain the answer: status "insufficient_evidence",
   answer null, cited_source_ids [], and a message explaining that the
   available documents do not contain it. If the question is ambiguous,

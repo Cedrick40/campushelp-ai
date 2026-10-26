@@ -14,6 +14,7 @@ The key comes from `AI_API_KEY` in `backend/.env` and never leaves the
 provider module (FR-08).
 """
 
+import re
 from collections.abc import Callable
 
 from retrieval.evidence_validation import (
@@ -64,6 +65,56 @@ def _error(message: str = ERROR_MESSAGE) -> dict:
     }
 
 
+def _normalize_text(text: str) -> str:
+    return " ".join(str(text).split())
+
+
+def _tokens(text: str) -> set[str]:
+    return set(re.findall(r"\w+", str(text).lower()))
+
+
+def _exact_answer(answer: str, citations: list[str], evidence: list[dict]) -> str:
+    """
+    Return the complete cited paragraph, verbatim.
+
+    The provider is asked to quote the source, but a paraphrase or a partial
+    sentence would still be grounded while missing the rest of the rule. Pick
+    the cited passage that best matches the provider's answer and return its
+    full text, preserving the document's wording.
+    """
+    by_id = {
+        str(passage.get("source_id")): passage
+        for passage in evidence
+        if isinstance(passage, dict)
+        and passage.get("source_id") is not None
+        and isinstance(passage.get("text"), str)
+        and passage["text"].strip()
+    }
+    cited = [by_id[source_id] for source_id in citations if source_id in by_id]
+
+    if not cited:
+        return answer
+
+    normalized_answer = _normalize_text(answer)
+
+    if any(normalized_answer == _normalize_text(p["text"]) for p in cited):
+        return answer
+
+    answer_terms = _tokens(answer)
+    best = cited[0]
+    best_score = -1.0
+
+    for passage in cited:
+        passage_terms = _tokens(passage["text"])
+        overlap = len(answer_terms & passage_terms)
+        score = overlap / max(len(answer_terms), 1)
+        if score > best_score:
+            best = passage
+            best_score = score
+
+    return _normalize_text(best["text"])
+
+
 def _normalize(raw: dict, evidence: list[dict]) -> dict:
     """Drop unknown citations and enforce the layer-2 fallback rules."""
     if not isinstance(raw, dict):
@@ -99,6 +150,9 @@ def _normalize(raw: dict, evidence: list[dict]) -> dict:
         status = "insufficient_evidence"
         answer = None
         message = NOT_VERIFIED_MESSAGE
+
+    if status == "answered" and answer and citations:
+        answer = _exact_answer(answer, citations, evidence)
 
     if status == "insufficient_evidence":
         answer = None

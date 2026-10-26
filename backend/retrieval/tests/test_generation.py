@@ -67,6 +67,24 @@ class GenerationBoundaryTests(unittest.TestCase):
         self.assertIsNone(result["message"])
 
     @patch.dict(os.environ, {"AI_API_KEY": "test-key"})
+    def test_answered_result_uses_the_complete_cited_paragraph(self):
+        def paraphrasing_provider(question, evidence):
+            return {
+                "status": "answered",
+                "answer": "Students must complete registration.",
+                "cited_source_ids": ["REG-001"],
+                "message": None,
+            }
+
+        result = generate_answer(
+            self.evidence,
+            "When must students complete registration?",
+            provider=paraphrasing_provider,
+        )
+        self.assertEqual(result["status"], "answered")
+        self.assertEqual(result["answer"], self.evidence[0]["text"])
+
+    @patch.dict(os.environ, {"AI_API_KEY": "test-key"})
     def test_citation_outside_the_evidence_is_dropped_and_abstained(self):
         def hallucinating_provider(question, evidence):
             return {

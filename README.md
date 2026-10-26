@@ -22,9 +22,10 @@ Show that an AI assistant can be trusted on rules that cost students money or de
 
 1. **Retrieve first.** The question is cleaned into search words and matched against stored document passages with SQLite FTS5.
 2. **Two-layer honesty.** If retrieval finds no convincing evidence, the system answers "could not verify" without calling the AI at all. If evidence is found but does not answer the question, the model is told to abstain.
-3. **Cite or drop.** Every source the model cites must be one of the retrieved passages; invented citations are removed.
-4. **Conflicts are shown, not hidden.** If two documents disagree, both are shown side by side.
-5. **Safe failures.** Provider or network errors give a friendly retry message and never expose keys or internal details.
+3. **Quote, don't paraphrase.** An answered response returns the complete cited paragraph verbatim, so the student gets the exact rule.
+4. **Cite or drop.** Every source the model cites must be one of the retrieved passages; invented citations are removed.
+5. **Conflicts are shown, not hidden.** If two documents disagree, both are shown side by side.
+6. **Safe failures.** Provider or network errors give a friendly retry message and never expose keys or internal details.
 
 ## Run it locally
 
