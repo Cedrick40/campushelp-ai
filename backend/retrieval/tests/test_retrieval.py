@@ -100,22 +100,32 @@ class RetrievalTests(unittest.TestCase):
 
     def test_stopwords_are_dropped_from_the_query(self):
         terms = query_terms("What is the registration deadline?")
-        self.assertEqual(terms, {"registration", "deadline"})
+        self.assertEqual(terms, {"regist", "deadline"})
         self.assertEqual(query_terms("the deadline"), {"deadline"})
         self.assertNotIn("the", terms)
 
     def test_temporal_registration_question_also_searches_for_deadline(self):
         self.assertEqual(
             query_terms("When is registration?"),
-            {"registration", "deadline"},
+            {"regist", "deadline"},
         )
         self.assertEqual(
             query_terms("When do I register?"),
-            {"register", "deadline"},
+            {"regist", "deadline"},
         )
         self.assertEqual(
             query_terms("registration fees"),
-            {"registration", "fees"},
+            {"regist", "fee"},
+        )
+
+    def test_question_framing_words_are_not_search_terms(self):
+        self.assertEqual(
+            query_terms("Where can I find the university's student fee information?"),
+            {"student", "fee"},
+        )
+        self.assertEqual(
+            query_terms("Do I need to finish registering before the deadline?"),
+            {"regist", "deadline"},
         )
 
     def test_empty_passage_list_returns_no_evidence(self):
@@ -178,6 +188,25 @@ class RetrievalTests(unittest.TestCase):
         self.assertEqual(results[0]["title"], "Registration Guide")
         self.assertEqual(results[0]["page"], 4)
         self.assertNotIn("score", passage)
+
+    def test_general_rule_breaks_a_keyword_tie(self):
+        passages = [
+            {
+                "source_id": "REG-SUPP",
+                "text": (
+                    "Applicants on the supplementary list may register "
+                    "after the deadline."
+                ),
+            },
+            {
+                "source_id": "REG-ALL",
+                "text": "All students must register before the deadline.",
+            },
+        ]
+
+        results = retrieve("When is the registration deadline?", passages)
+
+        self.assertEqual(results[0]["source_id"], "REG-ALL")
 
     def test_empty_passage_text_is_ignored(self):
         passages = [

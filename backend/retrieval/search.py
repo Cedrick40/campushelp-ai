@@ -19,7 +19,7 @@ STOPWORDS = frozenset(
 
 MIN_SCORE = 0.3
 MIN_COVERAGE = 0.33
-DEFAULT_TOP_K = 5
+DEFAULT_TOP_K = 8
 
 INSUFFICIENT_EVIDENCE = "insufficient_evidence"
 RETRIEVED = "retrieved"
@@ -27,15 +27,58 @@ RETRIEVED = "retrieved"
 TEMPORAL_HINTS = frozenset(
     {"when", "deadline", "date", "time", "period", "start", "end", "until"}
 )
-REGISTRATION_TERMS = frozenset(
-    {"registration", "register", "registering", "registered"}
+REGISTRATION_FORMS = frozenset(
+    {"registration", "register", "registers", "registering", "registered"}
 )
+QUERY_NOISE = frozenset(
+    """
+    according available cut document documents explain explains find finish
+    information know leave need needs off okay provide provided required say
+    tell university
+    """.split()
+)
+
+GENERAL_RULE_MARKERS = (
+    "all students",
+    "every student",
+    "each student",
+    "all candidates",
+    "all learners",
+)
+STEMS = {
+    "registration": "regist",
+    "register": "regist",
+    "registers": "regist",
+    "registering": "regist",
+    "registered": "regist",
+}
+
+
+def _stem(token: str) -> str:
+    """Small prefix-preserving stem so "fees"/"fee" and "registering"/"registration" meet."""
+    if token in STEMS:
+        return STEMS[token]
+
+    if token.endswith("ing") and len(token) > 5:
+        token = token[:-3]
+    elif token.endswith("ed") and len(token) > 4:
+        token = token[:-2]
+
+    if token.endswith("s") and not token.endswith("ss") and len(token) > 3:
+        token = token[:-1]
+
+    return token
+
+
+STOPWORD_STEMS = frozenset(_stem(word) for word in STOPWORDS)
+REGISTRATION_STEMS = frozenset(_stem(word) for word in REGISTRATION_FORMS)
+QUERY_NOISE_STEMS = frozenset(_stem(word) for word in QUERY_NOISE)
 
 
 def tokenize(text: str) -> set[str]:
     """Convert text into lowercase word tokens (single-character noise dropped)."""
     return {
-        token
+        _stem(token)
         for token in re.findall(r"\b\w+\b", text.lower())
         if len(token) > 1
     }
@@ -44,14 +87,19 @@ def tokenize(text: str) -> set[str]:
 def query_terms(question: str) -> set[str]:
     """Meaningful question terms: stopwords dropped, per spec."""
     tokens = tokenize(question)
-    terms = tokens - STOPWORDS
+    terms = tokens - STOPWORD_STEMS - QUERY_NOISE_STEMS
 
     # "When is registration?" otherwise matches only the word "registration",
     # so short section headings outrank the passage containing the deadline.
-    if terms & REGISTRATION_TERMS and tokens & TEMPORAL_HINTS:
+    if (tokens & REGISTRATION_STEMS) and (tokens & TEMPORAL_HINTS):
         terms.add("deadline")
 
     return terms
+
+
+def _is_general_rule(text: str) -> bool:
+    normalized = " ".join(str(text or "").split()).lower()
+    return any(marker in normalized for marker in GENERAL_RULE_MARKERS)
 
 
 def _is_heading(passage: dict) -> bool:
@@ -117,13 +165,13 @@ def retrieve(
             score = len(overlap) / len(terms)
 
             if score >= min_score:
-                ranked.append((score, passage))
+                ranked.append((score, _is_general_rule(text), passage))
 
-    ranked.sort(key=lambda item: item[0], reverse=True)
+    ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
 
     return [
         {**passage, "score": round(score, 4)}
-        for score, passage in ranked[:top_k]
+        for score, _, passage in ranked[:top_k]
     ]
 
 
@@ -264,7 +312,10 @@ def retrieve_from_connection(
         results.append(record)
 
     results = [r for r in results if r["score"] >= min_score]
-    results.sort(key=lambda item: item["score"], reverse=True)
+    results.sort(
+        key=lambda item: (item["score"], _is_general_rule(item.get("text", ""))),
+        reverse=True,
+    )
     return results[:top_k]
 
 

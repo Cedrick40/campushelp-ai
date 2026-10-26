@@ -44,10 +44,15 @@ Rules:
   paragraph verbatim from the single cited passage that answers it. Do not
   paraphrase, summarize, shorten, or merge disconnected passages. Put the
   source id used in cited_source_ids and set message null.
+- Answer the question's intent from the closest relevant passage even when
+  the passage does not repeat the question's wording. Do not abstain merely
+  because a rule is worded differently from the question.
+- If the question is genuinely ambiguous and the evidence contains several
+  possible answers, use status "insufficient_evidence" and ask which one the
+  student means instead of guessing or claiming the documents are missing.
 - If the passages do not contain the answer: status "insufficient_evidence",
   answer null, cited_source_ids [], and a message explaining that the
-  available documents do not contain it. If the question is ambiguous,
-  the message asks which thing the student means.
+  available documents do not contain it.
 - If the passages disagree with each other for the same group of students:
   status "conflicting_sources", an answer that explains the disagreement
   without choosing a side, cited_source_ids listing at least two of the
@@ -56,6 +61,8 @@ Rules:
   subgroup (for example, applicants on the supplementary list) are not a
   conflict. For a general question, answer with the general rule and cite
   only that passage.
+- If the question asserts a false premise, do not repeat it as fact; state
+  that the documents do not support it.
 - Never invent dates, fees, amounts, policies, office names or contacts
   that are not in the passages.
 - Output JSON only, with exactly these keys: status, answer,
