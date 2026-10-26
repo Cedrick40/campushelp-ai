@@ -3,7 +3,9 @@
 The student-facing page: ask a question, get an answer with the document it
 came from, or an honest notice when it cannot be verified.
 
-Stack: React 19 + Vite, plain JavaScript, plain CSS, `fetch()`.
+Stack: React 19 + Vite, plain JavaScript, plain CSS, `fetch()`. Accounts and
+saved history use Django token authentication: the token is kept in
+`localStorage` and sent as `Authorization: Token <key>`.
 
 Contract, look and feel, and component responsibilities are defined in
 `../devpost/spec.md` and `../devpost/prd.md`.
@@ -50,7 +52,8 @@ already running on that port in mock mode, those checks are skipped with a
 message rather than failing.
 
 Browser checks need Chrome or Chromium. They are skipped when no browser is
-found; everything else still runs.
+found; everything else still runs. In a headless container where Chrome cannot
+start, set `VERIFY_NO_BROWSER=1 npm run verify` to skip those checks explicitly.
 
 ## Configuration
 
@@ -118,6 +121,18 @@ mock covers all four responses: answered, insufficient evidence, conflicting
 sources, and a service failure. The footer shows "Mock data — the backend is
 not connected." so mock content can never be mistaken for a real answer.
 
+Mock mode only replaces the Q&A and banner endpoints. Register, log in,
+logout and saved history always use the real backend, because they rely on
+real accounts and server-side storage.
+
+**3. Accounts and history**
+
+Registration creates a Django user, hashes the password on the server, and
+returns a token. Saved questions are stored in the `ChatEntry` table per
+user, so history survives a refresh, a restart and another device. Logging
+out deletes the token on the server and clears it locally; it also clears the
+conversation on screen. Guests can ask questions but nothing is saved.
+
 **2. Real API mode**
 
 ```bash
@@ -137,6 +152,18 @@ the same. The backend must be running and must allow this origin —
 | `POST /api/ask/` | Ask a question, get an answer with sources |
 | `GET /api/corpus/` | Banner data: corpus type, university, last checked |
 | `GET /api/documents/<id>/file/` | Serves a sample document; used as the `url` of sample sources |
+| `POST /api/auth/register/` | Create an account; returns `{ token, user }` |
+| `POST /api/auth/login/` | Exchange email and password for a token |
+| `POST /api/auth/logout/` | Revoke the caller's token |
+| `GET /api/auth/me/` | The signed-in user; restores a session on load |
+| `GET /api/history/` | The caller's saved answers, newest first |
+| `POST /api/history/` | Save one question and its answer |
+| `DELETE /api/history/` | Clear the caller's saved history |
+| `GET /api/history/<id>/` | Read one saved answer |
+| `DELETE /api/history/<id>/` | Delete one saved answer |
+
+The auth and history endpoints require `Authorization: Token <key>`.
+Unknown or revoked tokens return 401 and the client clears the saved token.
 
 Request and response shapes are in `../devpost/spec.md` under
 *API — `POST /api/ask/`*. `src/api.js` normalises every response into one
@@ -147,15 +174,18 @@ fields (a source without a date, an excerpt or a link still renders).
 
 ```
 src/
-├── App.jsx                 page layout: banner, title, question box, answer area, footer
-├── api.js                  fetch wrappers, response normalisation, error handling
-├── mockApi.js              mock backend used when VITE_USE_MOCK=true
-├── format.js               date formatting
+├── App.jsx                 page layout, conversation, auth and history state
+├── api.js                  fetch wrappers, token auth, history, normalisation
+├── mockApi.js              mock Q&A backend used when VITE_USE_MOCK=true
+├── format.js               date and history timestamp formatting
 ├── styles.css              all styling, no UI framework
 └── components/
     ├── Banner.jsx          sample-data vs official-documents notice
     ├── QuestionBox.jsx     input, submit, examples, validation, loading
     ├── AnswerArea.jsx      answer | fallback | conflict | failure
+    ├── ChatMessage.jsx     user bubble and assistant reply wrapper
+    ├── Sidebar.jsx         saved history, open/delete/clear, account footer
+    ├── AuthModal.jsx       log in / register with server errors and focus trap
     └── SourceCard.jsx      title, section, date, page, excerpt, link
 ```
 
@@ -173,3 +203,12 @@ src/
   clickable.
 - Requests time out after `VITE_REQUEST_TIMEOUT_MS` and turn into a retry
   message instead of hanging.
+- A guest can ask questions; only a signed-in user's answers are saved. The
+  sidebar lists saved answers newest first, and clicking one reopens it.
+- The signed-in session is restored from `localStorage` on load. An invalid
+  token is discarded, and the page falls back to guest mode without an error.
+- Logging out revokes the token on the server, clears it locally, and clears
+  the visible conversation while leaving the account's history intact for the
+  next login.
+- The auth dialog closes on Escape or a backdrop click, traps Tab focus, locks
+  page scrolling while open, and shows the server's validation message.

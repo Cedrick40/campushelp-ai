@@ -1,9 +1,5 @@
 /**
- * Restrained line icons.
- *
- * They carry meaning (this is a document, this link opens a new tab, this
- * state is a refusal) and nothing more. No sparkles, no robot, no mascot —
- * the page is a reference page, not a chat app.
+ * Line icons & Brand Logos
  */
 
 function Icon({ children, size = 16, className = '' }) {
@@ -23,6 +19,81 @@ function Icon({ children, size = 16, className = '' }) {
     >
       {children}
     </svg>
+  )
+}
+
+export function LogoIcon({ size = 28, className = '' }) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <rect width="32" height="32" rx="9" fill="#1D4ED8" />
+      <path
+        d="M10 8H20C21.1046 8 22 8.89543 22 10V22C22 23.1046 21.1046 24 20 24H10C8.89543 24 8 23.1046 8 22V10C8 8.89543 8.89543 8 10 8Z"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path d="M12 12H18" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <path d="M12 16H18" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <path d="M12 20H15" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="21" cy="11" r="2.5" fill="#60A5FA" stroke="#1D4ED8" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
+export function MenuIcon(props) {
+  return (
+    <Icon {...props}>
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </Icon>
+  )
+}
+
+export function CloseIcon(props) {
+  return (
+    <Icon {...props}>
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </Icon>
+  )
+}
+
+export function PlusIcon(props) {
+  return (
+    <Icon {...props}>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </Icon>
+  )
+}
+
+export function HistoryIcon(props) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <polyline points="12 6 12 12 16 14" />
+    </Icon>
+  )
+}
+
+export function TrashIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M4 7h16" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" />
+      <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" />
+    </Icon>
   )
 }
 

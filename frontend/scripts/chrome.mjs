@@ -48,27 +48,53 @@ export async function launchChrome({ port = 9333 } = {}) {
     ],
     { stdio: 'ignore' },
   )
+  // Do not let a stuck browser keep the verifier alive. The DevTools socket
+  // and the polling fetch below keep Node running while work is in progress.
+  chrome.unref()
 
   let target = null
-  for (let attempt = 0; attempt < 60 && !target; attempt += 1) {
+  const deadline = Date.now() + 15000
+  while (!target && Date.now() < deadline) {
     try {
-      const list = await (await fetch(`http://localhost:${port}/json/list`)).json()
+      const response = await fetch(`http://localhost:${port}/json/list`, {
+        signal: AbortSignal.timeout(1000),
+      })
+      const list = await response.json()
       target = list.find((entry) => entry.type === 'page')
     } catch {
-      // Chrome is not listening yet.
+      // Chrome is not listening yet, or is too busy to answer in time.
     }
     if (!target) await sleep(250)
   }
   if (!target) {
-    chrome.kill()
+    chrome.kill('SIGKILL')
     return null
   }
 
   const socket = new WebSocket(target.webSocketDebuggerUrl)
-  await new Promise((resolve, reject) => {
-    socket.onopen = resolve
-    socket.onerror = reject
-  })
+  let timer
+  try {
+    const opened = await Promise.race([
+      new Promise((resolve, reject) => {
+        socket.onopen = () => resolve(true)
+        socket.onerror = reject
+      }),
+      new Promise((resolve) => {
+        timer = setTimeout(() => resolve(false), 10000)
+      }),
+    ])
+    if (!opened) throw new Error('Chrome DevTools did not accept a connection')
+  } catch {
+    try {
+      socket.close()
+    } catch {
+      // already closed
+    }
+    chrome.kill('SIGKILL')
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
 
   let nextId = 1
   const pending = new Map()
@@ -140,7 +166,7 @@ export async function launchChrome({ port = 9333 } = {}) {
     } catch {
       // already closed
     }
-    chrome.kill()
+    chrome.kill('SIGKILL')
   }
 
   await send('Page.enable')

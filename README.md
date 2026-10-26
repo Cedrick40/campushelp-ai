@@ -4,7 +4,7 @@
 
 ## About
 
-CampusHelp AI answers students' questions about university rules, fees and dates using only a fixed set of approved documents. Every answer shows the source it came from, with a short quoted excerpt, so a student can check it. If the documents do not support an answer, it says "I could not verify this from the available documents" instead of guessing. This is an unofficial student project, not affiliated with any university.
+CampusHelp AI answers students' questions about university rules, fees and dates using only a fixed set of approved documents. Every answer shows the source it came from, with a short quoted excerpt, so a student can check it. If the documents do not support an answer, it says "I could not verify this from the available documents" instead of guessing. Students can ask as guests, or register to keep a private history of their questions across sessions. This is an unofficial student project, not affiliated with any university.
 
 ## Objective
 
@@ -139,7 +139,7 @@ docs/           the team's requirements document
 
 ## Outcome
 
-Status on 24 October 2026: the API, search table, answer validation and automated tests are in place; document and the full demo are in place also.
+Status on 26 October 2026: the API, search table, answer validation, token accounts, saved history and automated tests are in place; the documents and the full demo are in place also.
 
 ## Credits
 
