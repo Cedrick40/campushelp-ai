@@ -243,6 +243,74 @@ async function browserChecksMock(driver) {
     'three example questions',
     (await driver.evaluate("document.querySelectorAll('.examples__button').length")) === 3,
   )
+  const layout = await driver.evaluate(`(() => {
+    const box = (selector) => document.querySelector(selector)?.getBoundingClientRect();
+    const main = box('.page__main');
+    const header = box('.chatHeader__inner');
+    const brand = box('.chatHeader__brand');
+    const scroll = box('.chat__scroll');
+    const composer = box('.chat__composerWrap');
+    const logo = box('.brandLogoIcon');
+    return {
+      mainWidth: main?.width ?? 0,
+      headerWidth: header?.width ?? 0,
+      brandLeft: brand && main ? brand.left - main.left : 9999,
+      scrollWidth: scroll?.width ?? 0,
+      composerWidth: composer?.width ?? 0,
+      logoWidth: logo?.width ?? 0,
+      background: getComputedStyle(document.querySelector('.page')).backgroundImage,
+    };
+  })()`)
+
+  check('header spans the available width', Math.abs(layout.headerWidth - layout.mainWidth) < 2, `${layout.headerWidth} / ${layout.mainWidth}`)
+  check('chat fills the available width', Math.abs(layout.scrollWidth - layout.mainWidth) < 2, `${layout.scrollWidth} / ${layout.mainWidth}`)
+  check('composer fills the available width', Math.abs(layout.composerWidth - layout.mainWidth) < 2, `${layout.composerWidth} / ${layout.mainWidth}`)
+  check('brand and menu are anchored to the left', layout.brandLeft < 96, `${layout.brandLeft}px from the main edge`)
+  check('brand logo is visible', layout.logoWidth > 0, `${layout.logoWidth}px`)
+  check('campus background is applied', layout.background.includes('campus-background.svg'), layout.background)
+  check(
+    'logout is not duplicated in the header',
+    (await driver.evaluate("!!document.querySelector('.chatHeader .authButton--text')")) === false,
+  )
+
+  await driver.setViewport(1280, 900)
+  await new Promise((resolve) => setTimeout(resolve, 150))
+  const desktopLayout = await driver.evaluate(`(() => {
+    const page = document.querySelector('.page');
+    const main = document.querySelector('.page__main');
+    const previousTransition = main.style.transition;
+    main.style.transition = 'none';
+
+    page.classList.remove('page--sidebar-open');
+    const closed = main.getBoundingClientRect();
+
+    page.classList.add('page--sidebar-open');
+    void main.offsetWidth;
+    const open = main.getBoundingClientRect();
+
+    page.classList.remove('page--sidebar-open');
+    main.style.transition = previousTransition;
+
+    return {
+      viewport: window.innerWidth,
+      closedWidth: closed.width,
+      openLeft: open.left,
+      openWidth: open.width,
+    };
+  })()`)
+
+  check(
+    'desktop chat fills the viewport when the sidebar is closed',
+    Math.abs(desktopLayout.closedWidth - desktopLayout.viewport) < 2,
+    `${desktopLayout.closedWidth} / ${desktopLayout.viewport}`,
+  )
+  check(
+    'open sidebar pushes chat without a gap',
+    Math.abs(desktopLayout.openLeft - 280) < 2 &&
+      Math.abs(desktopLayout.openWidth - (desktopLayout.viewport - 280)) < 2,
+    `left ${desktopLayout.openLeft}, width ${desktopLayout.openWidth}, viewport ${desktopLayout.viewport}`,
+  )
+
   const voiceLabel = await driver.evaluate(
     "document.querySelector('.ask__voice')?.getAttribute('aria-label') || ''",
   )

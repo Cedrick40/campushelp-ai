@@ -303,7 +303,7 @@ export default function App() {
             <div className="chatHeader__brand">
               {user ? (
                 <button
-                  className="iconButton"
+                  className="iconButton chatHeader__menu"
                   type="button"
                   onClick={() => setIsSidebarOpen((open) => !open)}
                   aria-label="Toggle chat history sidebar"
@@ -336,38 +336,23 @@ export default function App() {
                 </button>
               ) : null}
 
-              {!isRestoring ? (
-                user ? (
-                  <div className="userBadge">
-                    <span className="userAvatar" aria-hidden="true">
-                      {accountName[0].toUpperCase()}
-                    </span>
-                    <button
-                      className="authButton authButton--text"
-                      type="button"
-                      onClick={handleLogout}
-                    >
-                      Log out
-                    </button>
-                  </div>
-                ) : (
-                  <div className="authButtons">
-                    <button
-                      className="authButton authButton--secondary"
-                      type="button"
-                      onClick={() => setAuthModal('login')}
-                    >
-                      Log in
-                    </button>
-                    <button
-                      className="authButton authButton--primary"
-                      type="button"
-                      onClick={() => setAuthModal('register')}
-                    >
-                      Register
-                    </button>
-                  </div>
-                )
+              {!isRestoring && !user ? (
+                <div className="authButtons">
+                  <button
+                    className="authButton authButton--secondary"
+                    type="button"
+                    onClick={() => setAuthModal('login')}
+                  >
+                    Log in
+                  </button>
+                  <button
+                    className="authButton authButton--primary"
+                    type="button"
+                    onClick={() => setAuthModal('register')}
+                  >
+                    Register
+                  </button>
+                </div>
               ) : null}
             </div>
           </div>

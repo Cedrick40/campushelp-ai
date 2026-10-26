@@ -845,9 +845,15 @@ a:hover {
 /* ============================================================== chat layout */
 
 .page {
+  position: relative;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
+  background-color: var(--canvas);
+  background-image: url('/campus-background.svg');
+  background-repeat: no-repeat;
+  background-position: right -130px bottom -120px;
+  background-size: min(980px, 72vw) auto;
 }
 
 .page__main {
@@ -871,9 +877,7 @@ a:hover {
   justify-content: space-between;
   gap: 16px;
   width: 100%;
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: 12px 16px;
+  padding: 12px clamp(16px, 3vw, 40px);
 }
 
 .chatHeader__brand {
@@ -881,6 +885,19 @@ a:hover {
   align-items: center;
   gap: 12px;
   min-width: 0;
+}
+
+.chatHeader__menu {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  background: var(--canvas-alt);
+  border-color: var(--line-200);
+}
+
+.chatHeader__menu:hover {
+  background: var(--blue-50);
+  border-color: var(--blue-100);
 }
 
 .message__avatar {
@@ -942,9 +959,7 @@ a:hover {
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: 28px 16px 20px;
+  padding: 28px clamp(16px, 3vw, 40px) 20px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -954,9 +969,7 @@ a:hover {
 .chat__composerWrap {
   flex: none;
   width: 100%;
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: 0 16px 18px;
+  padding: 0 clamp(16px, 3vw, 40px) 18px;
 }
 
 /* ----------------------------------------------------------------- messages */
@@ -988,7 +1001,7 @@ a:hover {
   flex-direction: column;
   gap: 5px;
   min-width: 0;
-  max-width: min(100%, 760px);
+  max-width: min(100%, 900px);
 }
 
 .message__author {
@@ -1005,7 +1018,7 @@ a:hover {
 }
 
 .bubble--user {
-  max-width: min(82%, 620px);
+  max-width: min(82%, 720px);
   padding: 11px 15px;
   font-size: 0.9375rem;
   line-height: 1.55;
@@ -1189,15 +1202,15 @@ a:hover {
 
 @media (min-width: 640px) {
   .chatHeader__inner {
-    padding: 14px 24px;
+    padding: 14px clamp(20px, 3vw, 40px);
   }
 
   .chat__scroll {
-    padding: 34px 24px 24px;
+    padding: 34px clamp(20px, 3vw, 40px) 24px;
   }
 
   .chat__composerWrap {
-    padding: 0 24px 22px;
+    padding: 0 clamp(20px, 3vw, 40px) 22px;
   }
 
   .composer {
@@ -1245,19 +1258,27 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 760px;
-  margin: 12px auto 20px;
   width: 100%;
+  margin: 12px 0 20px;
 }
 
 .heroCard {
   position: relative;
   border-radius: 14px;
   overflow: hidden;
-  background: var(--blue-800);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(30, 64, 175, 0.98) 0%,
+      rgba(30, 64, 175, 0.9) 46%,
+      rgba(29, 78, 216, 0.52) 100%
+    ),
+    url('/campus-hero.svg') right center / cover no-repeat,
+    var(--blue-800);
   box-shadow: var(--shadow-md);
   color: #ffffff;
-  padding: 36px 28px;
+  padding: 40px 32px;
+  min-height: 260px;
 }
 
 .heroCard__content {
@@ -1422,12 +1443,6 @@ a:hover {
 .iconButton:hover {
   background: var(--line-100);
   color: var(--ink-900);
-}
-
-.userBadge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .userAvatar {
@@ -1628,11 +1643,18 @@ a:hover {
 }
 
 .sidebar__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
   padding: 14px 16px;
   border-top: 1px solid var(--line-200);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+}
+
+.sidebar__logout {
+  align-self: flex-start;
+  padding: 4px 0;
+  font-size: 0.8125rem;
 }
 
 .sidebar__userInfo {
@@ -1790,6 +1812,7 @@ a:hover {
 
 @media (min-width: 960px) {
   .page--sidebar-open .page__main {
+    width: calc(100% - 280px);
     margin-left: 280px;
   }
 
@@ -1804,8 +1827,7 @@ a:hover {
     padding: 10px 12px;
   }
 
-  .chatHeader__subtitle,
-  .userBadge .authButton--text {
+  .chatHeader__subtitle {
     display: none;
   }
 

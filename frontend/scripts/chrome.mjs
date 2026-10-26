@@ -140,6 +140,17 @@ export async function launchChrome({ port = 9333 } = {}) {
     await send('Page.navigate', { url })
   }
 
+  async function setViewport(width, height) {
+    await send('Emulation.setDeviceMetricsOverride', {
+      width,
+      height,
+      screenWidth: width,
+      screenHeight: height,
+      deviceScaleFactor: 1,
+      mobile: false,
+    })
+  }
+
   /** Runs a script in every page before any of the page's own scripts. */
   async function addInitScript(source) {
     await send('Page.addScriptToEvaluateOnNewDocument', { source })
@@ -172,5 +183,14 @@ export async function launchChrome({ port = 9333 } = {}) {
   await send('Page.enable')
   await send('Runtime.enable')
 
-  return { evaluate, waitFor, navigate, addInitScript, text, fillQuestion, close }
+  return {
+    evaluate,
+    waitFor,
+    navigate,
+    setViewport,
+    addInitScript,
+    text,
+    fillQuestion,
+    close,
+  }
 }

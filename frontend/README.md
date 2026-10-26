@@ -187,6 +187,12 @@ src/
     ├── Sidebar.jsx         saved history, open/delete/clear, account footer
     ├── AuthModal.jsx       log in / register with server errors and focus trap
     └── SourceCard.jsx      title, section, date, page, excerpt, link
+
+public/
+├── campus-background.svg  page background line art
+├── campus-hero.svg        welcome-card illustration
+├── config.js              runtime API override
+└── favicon.svg            brand mark
 ```
 
 ## Behaviour notes
