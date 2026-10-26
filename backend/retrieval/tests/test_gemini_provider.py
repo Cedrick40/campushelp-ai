@@ -222,6 +222,13 @@ class RetryPolicyTests(unittest.TestCase):
     def test_rate_limit_is_retryable(self):
         self.assertIsNotNone(_retry_delay(ApiError(429), attempt=1))
 
+    def test_daily_quota_is_not_retried(self):
+        class DailyQuotaError(ApiError):
+            def __str__(self):
+                return "429 per day limit exceeded"
+
+        self.assertIsNone(_retry_delay(DailyQuotaError(429), attempt=1))
+
     def test_server_error_is_retryable(self):
         self.assertIsNotNone(_retry_delay(ApiError(503), attempt=1))
 
@@ -276,11 +283,24 @@ class RetryExecutionTests(unittest.TestCase):
     def test_gives_up_after_max_attempts(self):
         errors = [ApiError(429) for _ in range(10)]
         client, calls = self._client_raising_then_succeeding(errors)
+        with patch.dict(os.environ, {"AI_MODEL": "pinned-model"}):
+            with patch("retrieval.gemini_provider._client", return_value=client):
+                with patch("retrieval.gemini_provider.time.sleep"):
+                    with self.assertRaises(ApiError):
+                        _generate_with_retry("k", "prompt")
+        self.assertEqual(calls["n"], 5)
+
+    def test_daily_quota_falls_back_to_the_next_model(self):
+        class DailyQuotaError(ApiError):
+            def __str__(self):
+                return "429 per day limit exceeded"
+
+        client, calls = self._client_raising_then_succeeding([DailyQuotaError(429)])
         with patch("retrieval.gemini_provider._client", return_value=client):
             with patch("retrieval.gemini_provider.time.sleep"):
-                with self.assertRaises(ApiError):
-                    _generate_with_retry("k", "prompt")
-        self.assertEqual(calls["n"], 5)
+                text = _generate_with_retry("k", "prompt")
+        self.assertEqual(text, "{}")
+        self.assertEqual(calls["n"], 2)
 
 
 if __name__ == "__main__":

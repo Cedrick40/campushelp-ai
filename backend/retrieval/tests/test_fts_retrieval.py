@@ -156,6 +156,29 @@ class Fts5RetrievalTests(unittest.TestCase):
         results = retrieve_from_connection(self.connection, "xyzqv blorpt")
         self.assertEqual(results, [])
 
+    def test_heading_chunks_do_not_hide_the_answer_passage(self):
+        self.connection.execute(
+            f"""
+            INSERT INTO {PASSAGE_TABLE}
+            (id, source_id, document_id, section, page, text)
+            VALUES (?,?,?,?,?,?)
+            """,
+            (3, "REG-HEAD", "1", "Registration", 3, "Registration"),
+        )
+        self.connection.execute(
+            f"INSERT INTO {FTS_TABLE} (rowid, text) VALUES (?, ?)",
+            (3, "Registration"),
+        )
+        self.connection.commit()
+
+        results = retrieve_from_connection(
+            self.connection, "When is registration?"
+        )
+
+        self.assertTrue(results)
+        self.assertEqual(results[0]["source_id"], "REG-001")
+        self.assertNotIn("REG-HEAD", [r["source_id"] for r in results])
+
     def test_matches_offline_backend_ranking(self):
         question = "students registration deadline"
         db_ids = [

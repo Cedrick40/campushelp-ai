@@ -1110,6 +1110,58 @@ a:hover {
   box-shadow: none;
 }
 
+.ask__voice {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--ink-600);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: color var(--duration) var(--ease),
+    background var(--duration) var(--ease),
+    border-color var(--duration) var(--ease);
+}
+
+.ask__voice:hover:not(:disabled) {
+  color: var(--blue-800);
+  background: var(--blue-50);
+}
+
+.ask__voice:disabled {
+  color: var(--ink-400);
+  cursor: not-allowed;
+}
+
+.ask__voice--listening {
+  color: #ffffff;
+  background: var(--red-700);
+  border-color: var(--red-700);
+  animation: voicePulse 1.4s ease-in-out infinite;
+}
+
+.ask__voice--listening:hover:not(:disabled) {
+  color: #ffffff;
+  background: var(--red-700);
+  border-color: var(--red-700);
+}
+
+@keyframes voicePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(180, 35, 24, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgba(180, 35, 24, 0);
+  }
+}
+
 .spinner--button {
   width: 16px;
   height: 16px;

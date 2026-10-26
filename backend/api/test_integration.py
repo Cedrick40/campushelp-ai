@@ -113,10 +113,39 @@ class RunEvaluationTests(TestCase):
         with self.assertRaises(CommandError):
             self.run_command(path)
 
+    def test_required_answer_text_is_checked(self):
+        path = self.write([{
+            "id": "q1", "category": "answerable", "question": "When are fees due?",
+            "expected_status": "answered", "expected_answer_contains": ["tuition"],
+        }])
+        output = self.run_command(path)
+        self.assertIn("PASS", output)
+
+        path = self.write([{
+            "id": "q2", "category": "answerable", "question": "When are fees due?",
+            "expected_status": "answered", "expected_answer_contains": ["not-present"],
+        }])
+        with self.assertRaises(CommandError):
+            self.run_command(path)
+
+    def test_forbidden_answer_text_is_checked(self):
+        path = self.write([{
+            "id": "q1", "category": "answerable", "question": "When are fees due?",
+            "expected_status": "answered", "expected_answer_not_contains": ["tuition"],
+        }])
+        with self.assertRaises(CommandError):
+            self.run_command(path)
+
     def test_retrieval_only_mode_needs_no_model(self):
         path = self.write([{"id": "q1", "category": "unsupported", "question": "Parking permits?",
                             "expected_status": "insufficient_evidence"}])
         output = self.run_command(path, retrieval=("insufficient_evidence", []), retrieval_only=True)
+        self.assertIn("1/1 passed", output)
+
+    def test_retrieval_only_mode_does_not_check_layer_two_abstention(self):
+        path = self.write([{"id": "q1", "category": "ambiguous", "question": "When is the deadline?",
+                            "expected_status": "insufficient_evidence"}])
+        output = self.run_command(path, retrieval=("retrieved", EVIDENCE), retrieval_only=True)
         self.assertIn("1/1 passed", output)
 
     def test_an_empty_or_missing_file_is_a_clear_error(self):

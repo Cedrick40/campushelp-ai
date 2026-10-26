@@ -16,6 +16,7 @@ Show that an AI assistant can be trusted on rules that cost students money or de
 - SQLite with FTS5 full-text search
 - Google Gemini API (through one swappable function)
 - React 19 and Vite, Node.js 24 LTS
+- Browser Web Speech API for voice typing (Chrome, Edge and Safari)
 - Built with the Devpost Learn "Build With AI: Basics" Skill Pack (see `devpost/`)
 
 ## My approach

@@ -28,6 +28,11 @@ def _titles_match(expected, found):
     return all(any(e.lower() in t for t in found_lower) for e in expected)
 
 
+def _expected_statuses(item):
+    expected = item["expected_status"]
+    return expected if isinstance(expected, list) else [expected]
+
+
 class Command(BaseCommand):
     help = "Run the evaluation questions and print pass/fail for each."
 
@@ -80,8 +85,13 @@ class Command(BaseCommand):
             for key in ("category", "question", "expected_status"):
                 if key not in item:
                     raise CommandError(f"A question is missing '{key}': {item}")
-            if item["expected_status"] not in STATUSES:
-                raise CommandError(f"Unknown expected_status '{item['expected_status']}' in {item.get('id', item['question'])}")
+
+            for expected_status in _expected_statuses(item):
+                if expected_status not in STATUSES:
+                    raise CommandError(
+                        f"Unknown expected_status '{expected_status}' in "
+                        f"{item.get('id', item['question'])}"
+                    )
         return questions
 
     def _check_endpoint(self, client, item):
@@ -92,22 +102,47 @@ class Command(BaseCommand):
         except ValueError:
             return False, f"the server answered HTTP {response.status_code}, not JSON (did you run 'python manage.py migrate'?)"
         status = body.get("status")
-        if status != item["expected_status"]:
-            return False, f"expected status '{item['expected_status']}' but got '{status}' ({body.get('message')})"
+        expected_statuses = _expected_statuses(item)
+
+        if status not in expected_statuses:
+            return False, (
+                f"expected status {expected_statuses} but got '{status}' "
+                f"({body.get('message')})"
+            )
         expected = item.get("expected_sources", [])
         if expected:
             titles = [s.get("title", "") for s in body.get("sources", [])]
             if not _titles_match(expected, titles):
                 return False, f"expected sources {expected} but the answer cited {titles}"
+
+        answer_text = f"{body.get('answer') or ''} {body.get('message') or ''}".lower()
+        required = item.get("expected_answer_contains", [])
+
+        if required and not all(term.lower() in answer_text for term in required):
+            return False, f"answer did not contain all of {required}: {answer_text[:300]}"
+
+        forbidden = item.get("expected_answer_not_contains", [])
+
+        if forbidden:
+            found = [term for term in forbidden if term.lower() in answer_text]
+            if found:
+                return False, f"answer contained forbidden text {found}: {answer_text[:300]}"
+
         return True, ""
 
     def _check_retrieval(self, item):
         status, evidence = retrieve_evidence(item["question"])
-        wants_evidence = item["expected_status"] in {"answered", "conflicting_sources"}
-        if wants_evidence and status != "retrieved":
+        wants_evidence = any(
+            expected in {"answered", "conflicting_sources"}
+            for expected in _expected_statuses(item)
+        )
+        # Abstention is layer 2's job; retrieval-only mode cannot check it.
+        if not wants_evidence:
+            return True, ""
+
+        if status != "retrieved":
             return False, "retrieval found no usable evidence"
-        if not wants_evidence and status == "retrieved":
-            return False, "retrieval returned evidence (the model would have to abstain)"
+
         expected = item.get("expected_sources", [])
         if expected:
             titles = [p.get("title", "") for p in evidence]

@@ -33,13 +33,17 @@ def _document_key(passage: dict) -> str | None:
 
 
 def _cited_documents(citations: list[str], evidence: list[dict]) -> set[str]:
-    keys = {
-        _document_key(passage)
+    by_source = {
+        passage["source_id"]: _document_key(passage)
         for passage in evidence
         if isinstance(passage, dict)
+        and isinstance(passage.get("source_id"), str)
     }
-    keys.discard(None)
-    return {c for c in citations if c in keys}
+    return {
+        by_source[source_id]
+        for source_id in citations
+        if source_id in by_source and by_source[source_id]
+    }
 
 
 def validate_answer_result(result: dict, evidence: list[dict]) -> dict:
