@@ -915,7 +915,7 @@ a:hover {
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  padding: 28px clamp(16px, 3vw, 40px) 6px;
+  padding: 28px clamp(16px, 3vw, 40px) 14px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -1161,7 +1161,7 @@ a:hover {
   }
 
   .chat__scroll {
-    padding: 34px clamp(20px, 3vw, 40px) 6px;
+    padding: 34px clamp(20px, 3vw, 40px) 20px;
   }
 
   .chat__composerWrap {
@@ -1175,7 +1175,7 @@ a:hover {
 
 @media (max-width: 520px) {
   .chat__scroll {
-    padding: 20px 12px 4px;
+    padding: 20px 12px 10px;
   }
 
   .chat__composerWrap {
