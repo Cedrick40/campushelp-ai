@@ -3,7 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
-from .models import ChatEntry
+from .models import ChatEntry, Conversation
 from .validators import ALLOWED_STATUSES
 
 MAX_QUESTION_LENGTH = 500
@@ -53,6 +53,7 @@ class AuthResponseSerializer(serializers.Serializer):
 class ChatEntryCreateSerializer(serializers.Serializer):
     question = serializers.CharField(max_length=MAX_QUESTION_LENGTH)
     result = serializers.JSONField()
+    conversation = serializers.IntegerField(required=False, allow_null=True, min_value=1)
 
     def validate_question(self, value):
         question = value.strip()
@@ -65,18 +66,37 @@ class ChatEntryCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError("The stored answer is not valid.")
         return value
 
+    def validate_conversation(self, value):
+        if value is None:
+            return value
+        request = self.context.get("request")
+        if request is None or not Conversation.objects.filter(
+            pk=value, user=request.user
+        ).exists():
+            raise serializers.ValidationError("That saved chat was not found.")
+        return value
+
 
 class ChatEntrySerializer(serializers.ModelSerializer):
-    title = serializers.SerializerMethodField()
-
     class Meta:
         model = ChatEntry
-        fields = ["id", "question", "title", "result", "created_at"]
+        fields = ["id", "conversation", "question", "result", "created_at"]
 
-    def get_title(self, obj):
-        if len(obj.question) <= 60:
-            return obj.question
-        return obj.question[:57].rstrip() + "..."
+
+class ConversationSummarySerializer(serializers.ModelSerializer):
+    entry_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Conversation
+        fields = ["id", "title", "created_at", "updated_at", "entry_count"]
+
+
+class ConversationDetailSerializer(serializers.ModelSerializer):
+    entries = ChatEntrySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Conversation
+        fields = ["id", "title", "created_at", "updated_at", "entries"]
 
 
 class AskRequestSerializer(serializers.Serializer):

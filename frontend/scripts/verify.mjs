@@ -136,7 +136,7 @@ async function contractChecksMock(api) {
   check('service failure response', failed.status === 'error', failed.status)
 
   const corpus = await api.fetchCorpus()
-  check('corpus banner data', corpus?.type === 'sample' || corpus?.type === 'official', JSON.stringify(corpus))
+  check('corpus data', corpus?.type === 'sample' || corpus?.type === 'official', JSON.stringify(corpus))
 
   let emptyError = null
   try {
@@ -226,19 +226,19 @@ async function contractChecksOffline(api) {
   )
 
   const corpus = await api.fetchCorpus()
-  check('an unreachable backend leaves the banner honest', corpus === null)
+  check('an unreachable backend leaves the corpus unknown', corpus === null)
 }
 
 // ------------------------------------------------------- 4. browser checks
 
 async function browserChecksMock(driver) {
   await driver.navigate('http://127.0.0.1:' + PORT + '/')
+  await driver.setViewport(1280, 900)
   await driver.waitFor("!!document.querySelector('.ask__input')", 20000)
   await new Promise((resolve) => setTimeout(resolve, 500))
 
   check('page title', (await driver.evaluate('document.title')) === 'CampusHelp AI')
   check('heading rendered', (await driver.evaluate(driver.text('.masthead__title'))) === 'CampusHelp AI')
-  check('banner rendered', (await driver.evaluate(driver.text('.banner'))).length > 0)
   check(
     'three example questions',
     (await driver.evaluate("document.querySelectorAll('.examples__button').length")) === 3,
@@ -250,6 +250,8 @@ async function browserChecksMock(driver) {
     const brand = box('.chatHeader__brand');
     const scroll = box('.chat__scroll');
     const composer = box('.chat__composerWrap');
+    const composerPanel = box('.composer');
+    const footer = box('.footer');
     const logo = box('.brandLogoIcon');
     const hero = box('.heroBanner');
     return {
@@ -258,13 +260,15 @@ async function browserChecksMock(driver) {
       brandLeft: brand && main ? brand.left - main.left : 9999,
       scrollWidth: scroll?.width ?? 0,
       composerWidth: composer?.width ?? 0,
+      composerBottom: composerPanel?.bottom ?? 0,
+      footerTop: footer?.top ?? 0,
       logoWidth: logo?.width ?? 0,
       logoSource: document.querySelector('.brandLogoIcon')?.getAttribute('src') || '',
       logoLoaded: (document.querySelector('.brandLogoIcon')?.naturalWidth ?? 0) > 0,
       heroWidth: hero?.width ?? 0,
       heroHeight: hero?.height ?? 0,
       heroRadius: hero ? getComputedStyle(document.querySelector('.heroBanner')).borderTopLeftRadius : '',
-      background: getComputedStyle(document.querySelector('.page')).backgroundImage,
+      pageBackground: getComputedStyle(document.querySelector('.page')).backgroundImage,
       heroBackground: hero ? getComputedStyle(document.querySelector('.heroBanner')).backgroundImage : '',
     };
   })()`)
@@ -279,7 +283,12 @@ async function browserChecksMock(driver) {
     layout.logoSource.includes('cesd-logo.png') && layout.logoLoaded,
     layout.logoSource,
   )
-  check('campus photo is applied to the page', layout.background.includes('ezra.jpg'), layout.background)
+  check('the page has a clean background', layout.pageBackground === 'none', layout.pageBackground)
+  check(
+    'the composer sits clear of the footer',
+    layout.footerTop - layout.composerBottom >= 16,
+    `${layout.footerTop - layout.composerBottom}px gap`,
+  )
   check('campus photo is applied to the hero', layout.heroBackground.includes('ezra.jpg'), layout.heroBackground)
   check(
     'photo hero is full width and uncarded',

@@ -309,9 +309,9 @@ export async function askQuestion(question) {
 }
 
 /**
- * Banner data for the page. Returns null when the endpoint is missing or
- * fails, so the page can say "status unavailable" instead of inventing a
- * university name or a last-checked date.
+ * Corpus metadata for the university label. Returns null when the endpoint
+ * is missing or fails, so the page never invents a university name or a
+ * last-checked date.
  */
 export async function fetchCorpus() {
   if (isMockMode) {
@@ -400,28 +400,55 @@ function normalizeEntry(raw) {
   const question = String(raw?.question ?? '').trim()
   return {
     id: raw?.id ?? null,
+    conversationId: raw?.conversation ?? null,
     question,
-    title: String(raw?.title ?? '').trim() || question,
     result: raw?.result ? normalizeResult(raw.result) : null,
     createdAt: String(raw?.created_at ?? '').trim() || null,
   }
 }
 
-export async function fetchHistory() {
+function normalizeConversation(raw) {
+  return {
+    id: raw?.id ?? null,
+    title: String(raw?.title ?? '').trim() || 'Saved chat',
+    entryCount: Number(raw?.entry_count ?? raw?.entries?.length ?? 0) || 0,
+    createdAt: String(raw?.created_at ?? '').trim() || null,
+    updatedAt: String(raw?.updated_at ?? raw?.created_at ?? '').trim() || null,
+  }
+}
+
+function normalizeConversationDetail(raw) {
+  return {
+    ...normalizeConversation(raw),
+    entries: Array.isArray(raw?.entries) ? raw.entries.map(normalizeEntry) : [],
+  }
+}
+
+export async function fetchConversations() {
   const payload = await request('/api/history/')
-  return Array.isArray(payload) ? payload.map(normalizeEntry) : []
+  return Array.isArray(payload) ? payload.map(normalizeConversation) : []
 }
 
-export async function saveHistoryEntry({ question, result }) {
-  return normalizeEntry(
-    await request('/api/history/', {
-      method: 'POST',
-      body: JSON.stringify({ question, result }),
+export async function fetchConversation(id) {
+  return normalizeConversationDetail(await request(`/api/history/${id}/`))
+}
+
+export async function saveHistoryEntry({ question, result, conversationId }) {
+  const payload = await request('/api/history/', {
+    method: 'POST',
+    body: JSON.stringify({
+      question,
+      result,
+      ...(conversationId ? { conversation: conversationId } : {}),
     }),
-  )
+  })
+  return {
+    entry: normalizeEntry(payload?.entry),
+    conversation: normalizeConversation(payload?.conversation),
+  }
 }
 
-export async function deleteHistoryEntry(id) {
+export async function deleteConversation(id) {
   await request(`/api/history/${id}/`, { method: 'DELETE' })
 }
 

@@ -5,8 +5,10 @@ from pathlib import Path
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.db import IntegrityError, transaction
+from django.db.models import Count
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
@@ -16,7 +18,7 @@ from rest_framework.response import Response
 from retrieval.generation import generate_answer
 from retrieval.search import retrieve_evidence
 
-from .models import ChatEntry, CorpusConfig, Document
+from .models import ChatEntry, Conversation, CorpusConfig, Document
 from .serializers import (
     MAX_QUESTION_LENGTH,
     AskRequestSerializer,
@@ -24,6 +26,8 @@ from .serializers import (
     AuthResponseSerializer,
     ChatEntryCreateSerializer,
     ChatEntrySerializer,
+    ConversationDetailSerializer,
+    ConversationSummarySerializer,
     CorpusSerializer,
     LoginSerializer,
     RegisterSerializer,
@@ -264,40 +268,80 @@ def me(request):
 # ---------------------------------------------------------------- history
 
 
+def _conversation_title(question):
+    if len(question) <= 80:
+        return question
+    return question[:77].rstrip() + "..."
+
+
 @extend_schema(
     request=ChatEntryCreateSerializer,
-    responses={200: ChatEntrySerializer(many=True), 201: ChatEntrySerializer},
+    responses={200: ConversationSummarySerializer(many=True), 201: dict},
 )
 @api_view(["GET", "POST", "DELETE"])
 @permission_classes([IsAuthenticated])
 def history(request):
-    """List, save, or clear the signed-in user's saved answers."""
+    """List, append to, or clear the caller's saved chat files."""
     if request.method == "GET":
-        entries = ChatEntry.objects.filter(user=request.user)[:100]
-        return Response(ChatEntrySerializer(entries, many=True).data)
+        conversations = (
+            Conversation.objects.filter(user=request.user)
+            .annotate(entry_count=Count("entries"))
+            .order_by("-updated_at")[:100]
+        )
+        return Response(ConversationSummarySerializer(conversations, many=True).data)
 
     if request.method == "DELETE":
-        ChatEntry.objects.filter(user=request.user).delete()
+        Conversation.objects.filter(user=request.user).delete()
         return Response(status=204)
 
-    serializer = ChatEntryCreateSerializer(data=request.data)
+    serializer = ChatEntryCreateSerializer(
+        data=request.data, context={"request": request}
+    )
     if not serializer.is_valid():
         return Response({"message": _serializer_message(serializer)}, status=400)
+    data = serializer.validated_data
+    conversation_id = data.get("conversation")
+
+    if conversation_id is None:
+        conversation = Conversation.objects.create(
+            user=request.user,
+            title=_conversation_title(data["question"]),
+        )
+    else:
+        conversation = get_object_or_404(
+            Conversation, pk=conversation_id, user=request.user
+        )
+
     entry = ChatEntry.objects.create(
+        conversation=conversation,
         user=request.user,
-        question=serializer.validated_data["question"],
-        result=serializer.validated_data["result"],
+        question=data["question"],
+        result=data["result"],
     )
-    return Response(ChatEntrySerializer(entry).data, status=201)
+    conversation.updated_at = timezone.now()
+    conversation.save(update_fields=["updated_at"])
+
+    conversation = (
+        Conversation.objects.filter(pk=conversation.pk)
+        .annotate(entry_count=Count("entries"))
+        .get()
+    )
+    return Response(
+        {
+            "entry": ChatEntrySerializer(entry).data,
+            "conversation": ConversationSummarySerializer(conversation).data,
+        },
+        status=201,
+    )
 
 
-@extend_schema(responses=ChatEntrySerializer)
+@extend_schema(responses=ConversationDetailSerializer)
 @api_view(["GET", "DELETE"])
 @permission_classes([IsAuthenticated])
 def history_detail(request, pk):
-    """Read or delete one saved answer belonging to the caller."""
-    entry = get_object_or_404(ChatEntry, pk=pk, user=request.user)
+    """Read or delete one saved chat file belonging to the caller."""
+    conversation = get_object_or_404(Conversation, pk=pk, user=request.user)
     if request.method == "DELETE":
-        entry.delete()
+        conversation.delete()
         return Response(status=204)
-    return Response(ChatEntrySerializer(entry).data)
+    return Response(ConversationDetailSerializer(conversation).data)

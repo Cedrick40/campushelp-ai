@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Banner from './components/Banner.jsx'
 import ChatMessage from './components/ChatMessage.jsx'
 import QuestionBox from './components/QuestionBox.jsx'
 import Sidebar from './components/Sidebar.jsx'
@@ -9,9 +8,10 @@ import { welcomeMessage } from './greeting.js'
 import {
   askQuestion,
   clearHistory as clearSavedHistory,
-  deleteHistoryEntry,
+  deleteConversation,
+  fetchConversation,
+  fetchConversations,
   fetchCorpus,
-  fetchHistory,
   isMockMode,
   loginAccount,
   logoutAccount,
@@ -35,7 +35,8 @@ const EXAMPLE_QUESTIONS = [
   },
 ]
 
-const HISTORY_ERROR = 'Your saved history could not be loaded. Please try again.'
+const HISTORY_ERROR = 'Your saved chats could not be loaded. Please try again.'
+const HISTORY_OPEN_ERROR = 'That saved chat could not be opened. Please try again.'
 const THEME_KEY = 'campushelp.theme'
 
 function initialTheme() {
@@ -64,6 +65,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [chatHistory, setChatHistory] = useState([])
   const [historyError, setHistoryError] = useState(null)
+  const [activeConversationId, setActiveConversationId] = useState(null)
   const [isRestoring, setIsRestoring] = useState(true)
   const [theme, setTheme] = useState(initialTheme)
   const [greeting, setGreeting] = useState('')
@@ -106,8 +108,8 @@ export default function App() {
         setUser(restored)
         setGreeting(welcomeMessage('login', restored))
         try {
-          const entries = await fetchHistory()
-          if (active) setChatHistory(entries)
+          const chats = await fetchConversations()
+          if (active) setChatHistory(chats)
         } catch {
           if (active) setHistoryError(HISTORY_ERROR)
         }
@@ -164,11 +166,16 @@ export default function App() {
 
         if (user) {
           try {
-            const entry = await saveHistoryEntry({ question, result: data })
+            const saved = await saveHistoryEntry({
+              question,
+              result: data,
+              conversationId: activeConversationId,
+            })
             if (requestId.current === id) {
+              setActiveConversationId(saved.conversation.id)
               setChatHistory((previous) => [
-                entry,
-                ...previous.filter((item) => item.id !== entry.id),
+                saved.conversation,
+                ...previous.filter((item) => item.id !== saved.conversation.id),
               ])
             }
           } catch {
@@ -186,7 +193,7 @@ export default function App() {
         if (requestId.current === id) setIsLoading(false)
       }
     },
-    [updateMessage, user],
+    [activeConversationId, updateMessage, user],
   )
 
   const handleAsk = useCallback(
@@ -225,6 +232,7 @@ export default function App() {
 
   const handleNewChat = useCallback(() => {
     requestId.current += 1
+    setActiveConversationId(null)
     setMessages([])
     setIsLoading(false)
     setIsSidebarOpen(false)
@@ -238,11 +246,12 @@ export default function App() {
 
     setUser(authenticated)
     setGreeting(welcomeMessage(mode, authenticated))
+    setActiveConversationId(null)
     setAuthModal(null)
     setHistoryError(null)
 
     try {
-      setChatHistory(await fetchHistory())
+      setChatHistory(await fetchConversations())
     } catch {
       setHistoryError(HISTORY_ERROR)
     }
@@ -256,6 +265,7 @@ export default function App() {
     await logoutAccount()
     setUser(null)
     setGreeting('')
+    setActiveConversationId(null)
     setAuthModal(null)
     setIsSidebarOpen(false)
     setChatHistory([])
@@ -263,52 +273,75 @@ export default function App() {
     setMessages([])
   }, [])
 
-  const handleSelectHistory = useCallback((entry) => {
-    if (!entry?.result) return
+  const handleSelectHistory = useCallback(async (chat) => {
+    if (!chat?.id) return
 
     requestId.current += 1
-    const userId = `u${nextId.current + 1}`
-    const assistantId = `a${nextId.current + 2}`
-    nextId.current += 2
-
-    setMessages([
-      { id: userId, role: 'user', text: entry.question },
-      {
-        id: assistantId,
-        role: 'assistant',
-        question: entry.question,
-        state: 'done',
-        result: entry.result,
-        error: null,
-      },
-    ])
     setIsLoading(false)
-    setIsSidebarOpen(false)
-  }, [])
-
-  const handleDeleteHistory = useCallback(async (entry) => {
-    if (!entry?.id) return
     try {
-      await deleteHistoryEntry(entry.id)
-      setChatHistory((previous) => previous.filter((item) => item.id !== entry.id))
+      const conversation = await fetchConversation(chat.id)
+      const nextMessages = []
+      for (const entry of conversation.entries) {
+        if (!entry.result) continue
+        nextMessages.push({
+          id: `h${entry.id}-u`,
+          role: 'user',
+          text: entry.question,
+        })
+        nextMessages.push({
+          id: `h${entry.id}-a`,
+          role: 'assistant',
+          question: entry.question,
+          state: 'done',
+          result: entry.result,
+          error: null,
+        })
+      }
+      setActiveConversationId(chat.id)
+      setMessages(nextMessages)
       setHistoryError(null)
+      setIsSidebarOpen(false)
     } catch {
-      setHistoryError('That saved answer could not be deleted. Please try again.')
+      setHistoryError(HISTORY_OPEN_ERROR)
     }
   }, [])
 
+  const handleDeleteHistory = useCallback(async (chat) => {
+    if (!chat?.id) return
+    const deletingActive = activeConversationId === chat.id
+    try {
+      await deleteConversation(chat.id)
+      setChatHistory((previous) => previous.filter((item) => item.id !== chat.id))
+      setHistoryError(null)
+      if (deletingActive) {
+        requestId.current += 1
+        setActiveConversationId(null)
+        setMessages([])
+        setIsLoading(false)
+      }
+    } catch {
+      setHistoryError('That saved chat could not be deleted. Please try again.')
+    }
+  }, [activeConversationId])
+
   const handleClearHistory = useCallback(async () => {
     if (chatHistory.length === 0) return
-    if (!window.confirm('Delete all saved history? This cannot be undone.')) return
+    if (!window.confirm('Delete all saved chats? This cannot be undone.')) return
 
     try {
       await clearSavedHistory()
       setChatHistory([])
       setHistoryError(null)
+      if (activeConversationId) {
+        requestId.current += 1
+        setActiveConversationId(null)
+        setMessages([])
+        setIsLoading(false)
+      }
     } catch {
-      setHistoryError('Your history could not be cleared. Please try again.')
+      setHistoryError('Your saved chats could not be cleared. Please try again.')
     }
-  }, [chatHistory.length])
+  }, [activeConversationId, chatHistory.length])
 
   const university = corpus?.university
   const accountName = user?.name || user?.email?.split('@')[0] || 'Account'
@@ -333,8 +366,6 @@ export default function App() {
       ) : null}
 
       <div className="page__main">
-        <Banner corpus={corpus} />
-
         <header className="chatHeader">
           <div className="chatHeader__inner">
             <div className="chatHeader__brand">

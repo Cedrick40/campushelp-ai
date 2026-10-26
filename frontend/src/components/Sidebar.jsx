@@ -30,7 +30,7 @@ export default function Sidebar({
       <aside
         id={id}
         className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}
-        aria-label="Saved chat history"
+        aria-label="Saved chats"
         aria-hidden={!isOpen}
         inert={!isOpen}
       >
@@ -53,7 +53,7 @@ export default function Sidebar({
           <div className="sidebar__sectionRow">
             <div className="sidebar__sectionTitle">
               <HistoryIcon size={14} />
-              <span>Saved history</span>
+              <span>Saved chats</span>
             </div>
             {history.length > 0 ? (
               <button
@@ -74,7 +74,7 @@ export default function Sidebar({
 
           {history.length === 0 ? (
             <p className="sidebar__empty">
-              No saved questions yet. Ask something while logged in and it will
+              No saved chats yet. Ask a question while logged in and it will
               appear here.
             </p>
           ) : (
@@ -89,14 +89,15 @@ export default function Sidebar({
                   >
                     <span className="sidebar__itemTitle">{item.title}</span>
                     <span className="sidebar__itemTime">
-                      {formatHistoryTime(item.createdAt) || 'Saved'}
+                      {formatHistoryTime(item.updatedAt || item.createdAt) ||
+                        'Saved'}
                     </span>
                   </button>
                   <button
                     className="sidebar__itemDelete"
                     type="button"
                     onClick={() => onDelete(item)}
-                    aria-label={`Delete saved question: ${item.title}`}
+                    aria-label={`Delete saved chat: ${item.title}`}
                   >
                     <TrashIcon size={14} />
                   </button>

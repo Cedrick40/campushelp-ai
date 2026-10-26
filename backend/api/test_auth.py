@@ -3,7 +3,7 @@ import json
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from .models import ChatEntry
+from .models import ChatEntry, Conversation
 
 User = get_user_model()
 PASSWORD = "Str0ng-Passw0rd!"
@@ -81,11 +81,15 @@ class HistoryTests(TestCase):
             "email": "student@example.edu", "password": PASSWORD,
         }).json()["token"]
 
-    def create(self, question="When does registration close?"):
-        return post(self.client, "/api/history/", {"question": question, "result": RESULT}, token=self.token)
+    def create(self, question="When does registration close?", conversation=None):
+        body = {"question": question, "result": RESULT}
+        if conversation is not None:
+            body["conversation"] = conversation
+        return post(self.client, "/api/history/", body, token=self.token)
 
     def test_history_survives_logout_and_login(self):
-        self.create()
+        response = self.create()
+        chat_id = response.json()["conversation"]["id"]
 
         logout = post(self.client, "/api/auth/logout/", {}, token=self.token)
         self.assertEqual(logout.status_code, 204)
@@ -96,45 +100,79 @@ class HistoryTests(TestCase):
         self.assertEqual(login.status_code, 200)
 
         body = get(self.client, "/api/history/", token=login.json()["token"]).json()
-        self.assertEqual([entry["question"] for entry in body], ["When does registration close?"])
+        self.assertEqual([chat["title"] for chat in body], ["When does registration close?"])
+        detail = get(self.client, f"/api/history/{chat_id}/", token=login.json()["token"]).json()
+        self.assertEqual([entry["question"] for entry in detail["entries"]], ["When does registration close?"])
 
     def test_history_requires_authentication(self):
         self.assertEqual(get(self.client, "/api/history/").status_code, 401)
         self.assertEqual(post(self.client, "/api/history/", {"question": "Q", "result": RESULT}).status_code, 401)
 
-    def test_saved_entry_is_listed_newest_first_with_a_title(self):
+    def test_new_chats_are_listed_newest_first_with_a_title(self):
         first = self.create("First question")
         second = self.create("Second question")
         self.assertEqual(first.status_code, 201)
         self.assertEqual(second.status_code, 201)
         body = get(self.client, "/api/history/", token=self.token).json()
-        self.assertEqual([entry["question"] for entry in body], ["Second question", "First question"])
-        self.assertEqual(body[0]["title"], "Second question")
+        self.assertEqual([chat["title"] for chat in body], ["Second question", "First question"])
+        self.assertEqual([chat["entry_count"] for chat in body], [1, 1])
+
+    def test_questions_append_to_the_same_chat_file(self):
+        first = self.create("First question")
+        chat_id = first.json()["conversation"]["id"]
+        second = self.create("Second question", conversation=chat_id)
+        self.assertEqual(second.status_code, 201)
+        self.assertEqual(second.json()["conversation"]["id"], chat_id)
+        self.assertEqual(second.json()["conversation"]["entry_count"], 2)
+
+        chats = get(self.client, "/api/history/", token=self.token).json()
+        self.assertEqual(len(chats), 1)
+        self.assertEqual(chats[0]["title"], "First question")
+        self.assertEqual(chats[0]["entry_count"], 2)
+
+        detail = get(self.client, f"/api/history/{chat_id}/", token=self.token).json()
+        self.assertEqual(
+            [entry["question"] for entry in detail["entries"]],
+            ["First question", "Second question"],
+        )
 
     def test_long_question_is_truncated_for_the_sidebar(self):
-        entry = self.create("x" * 100).json()
-        self.assertEqual(len(entry["title"]), 60)
-        self.assertTrue(entry["title"].endswith("..."))
+        chat = self.create("x" * 100).json()["conversation"]
+        self.assertEqual(len(chat["title"]), 80)
+        self.assertTrue(chat["title"].endswith("..."))
 
-    def test_entry_can_be_read_and_deleted(self):
-        entry_id = self.create().json()["id"]
-        fetched = get(self.client, f"/api/history/{entry_id}/", token=self.token)
+    def test_chat_can_be_read_and_deleted(self):
+        chat_id = self.create().json()["conversation"]["id"]
+        fetched = get(self.client, f"/api/history/{chat_id}/", token=self.token)
         self.assertEqual(fetched.status_code, 200)
-        self.assertEqual(fetched.json()["result"]["status"], "answered")
+        self.assertEqual(fetched.json()["entries"][0]["result"]["status"], "answered")
         self.assertEqual(self.client.delete(
-            f"/api/history/{entry_id}/", HTTP_AUTHORIZATION=f"Token {self.token}"
+            f"/api/history/{chat_id}/", HTTP_AUTHORIZATION=f"Token {self.token}"
         ).status_code, 204)
-        self.assertEqual(get(self.client, f"/api/history/{entry_id}/", token=self.token).status_code, 404)
+        self.assertEqual(get(self.client, f"/api/history/{chat_id}/", token=self.token).status_code, 404)
+        self.assertFalse(ChatEntry.objects.exists())
+        self.assertFalse(Conversation.objects.exists())
 
     def test_history_is_private_to_its_owner(self):
-        entry_id = self.create().json()["id"]
+        chat_id = self.create().json()["conversation"]["id"]
         other = post(self.client, "/api/auth/register/", {
             "email": "other@example.edu", "password": PASSWORD,
         }).json()["token"]
-        self.assertEqual(get(self.client, f"/api/history/{entry_id}/", token=other).status_code, 404)
+        self.assertEqual(get(self.client, f"/api/history/{chat_id}/", token=other).status_code, 404)
         self.assertEqual(get(self.client, "/api/history/", token=other).json(), [])
 
-    def test_clear_removes_only_the_callers_entries(self):
+    def test_cannot_append_to_another_users_chat(self):
+        chat_id = self.create().json()["conversation"]["id"]
+        other = post(self.client, "/api/auth/register/", {
+            "email": "other@example.edu", "password": PASSWORD,
+        }).json()["token"]
+        response = post(self.client, "/api/history/", {
+            "question": "Private append", "result": RESULT, "conversation": chat_id,
+        }, token=other)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("not found", response.json()["message"])
+
+    def test_clear_removes_only_the_callers_chats(self):
         self.create()
         self.assertEqual(self.client.delete(
             "/api/history/", HTTP_AUTHORIZATION=f"Token {self.token}"
@@ -145,3 +183,4 @@ class HistoryTests(TestCase):
         r = post(self.client, "/api/history/", {"question": "Q", "result": {"status": "invented"}}, token=self.token)
         self.assertEqual(r.status_code, 400)
         self.assertFalse(ChatEntry.objects.exists())
+        self.assertFalse(Conversation.objects.exists())

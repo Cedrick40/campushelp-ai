@@ -4,7 +4,7 @@ The student-facing page: ask a question, get an answer with the document it
 came from, or an honest notice when it cannot be verified.
 
 Stack: React 19 + Vite, plain JavaScript, plain CSS, `fetch()`. Accounts and
-saved history use Django token authentication: the token is kept in
+saved chats use Django token authentication: the token is kept in
 `localStorage` and sent as `Authorization: Token <key>`.
 
 Contract, look and feel, and component responsibilities are defined in
@@ -121,19 +121,21 @@ mock covers all four responses: answered, insufficient evidence, conflicting
 sources, and a service failure. The footer shows "Mock data — the backend is
 not connected." so mock content can never be mistaken for a real answer.
 
-Mock mode only replaces the Q&A and banner endpoints. Register, log in,
-logout and saved history always use the real backend, because they rely on
+Mock mode only replaces the Q&A and corpus endpoints. Register, log in,
+logout and saved chats always use the real backend, because they rely on
 real accounts and server-side storage.
 
-**3. Accounts and history**
+**2. Accounts and saved chats**
 
 Registration creates a Django user, hashes the password on the server, and
-returns a token. Saved questions are stored in the `ChatEntry` table per
-user, so history survives a refresh, a restart and another device. Logging
-out deletes the token on the server and clears it locally; it also clears the
-conversation on screen. Guests can ask questions but nothing is saved.
+returns a token. Questions are grouped into `Conversation` files, with each
+question and answer stored as a `ChatEntry` inside that file. A new file is
+created only when the student starts a new chat; later questions append to
+the current file. Logging out deletes the token on the server and clears it
+locally; it also clears the conversation on screen. Guests can ask questions
+but nothing is saved.
 
-**2. Real API mode**
+**3. Real API mode**
 
 ```bash
 # frontend/.env
@@ -150,17 +152,17 @@ the same. The backend must be running and must allow this origin —
 | Endpoint | Purpose |
 |---|---|
 | `POST /api/ask/` | Ask a question, get an answer with sources |
-| `GET /api/corpus/` | Banner data: corpus type, university, last checked |
+| `GET /api/corpus/` | Corpus type, university and last-checked date |
 | `GET /api/documents/<id>/file/` | Serves a sample document; used as the `url` of sample sources |
 | `POST /api/auth/register/` | Create an account; returns `{ token, user }` |
 | `POST /api/auth/login/` | Exchange email and password for a token |
 | `POST /api/auth/logout/` | Revoke the caller's token |
 | `GET /api/auth/me/` | The signed-in user; restores a session on load |
-| `GET /api/history/` | The caller's saved answers, newest first |
-| `POST /api/history/` | Save one question and its answer |
-| `DELETE /api/history/` | Clear the caller's saved history |
-| `GET /api/history/<id>/` | Read one saved answer |
-| `DELETE /api/history/<id>/` | Delete one saved answer |
+| `GET /api/history/` | The caller's saved chats, most recently updated first |
+| `POST /api/history/` | Save a question, optionally appending to an existing chat |
+| `DELETE /api/history/` | Clear all of the caller's saved chats |
+| `GET /api/history/<id>/` | Read one saved chat and all of its entries |
+| `DELETE /api/history/<id>/` | Delete one saved chat and its entries |
 
 The auth and history endpoints require `Authorization: Token <key>`.
 Unknown or revoked tokens return 401 and the client clears the saved token.
@@ -181,17 +183,16 @@ src/
 ├── greeting.js             time-based registration and login greetings
 ├── styles.css              all styling, light/dark tokens, no UI framework
 └── components/
-    ├── Banner.jsx          sample-data vs official-documents notice
     ├── QuestionBox.jsx     input, submit, examples, validation, loading
     ├── AnswerArea.jsx      answer | fallback | conflict | failure
     ├── ChatMessage.jsx     user bubble and assistant reply wrapper
-    ├── Sidebar.jsx         saved history, open/delete/clear, account footer
+    ├── Sidebar.jsx         saved chats, open/delete/clear, account footer
     ├── AuthModal.jsx       log in / register with server errors and focus trap
     └── SourceCard.jsx      title, section, date, page, excerpt, link
 
 public/
 ├── cesd-logo.png          CESD crest used in the header
-├── ezra.jpg               page background and full-width hero photo
+├── ezra.jpg               full-width hero photo
 ├── config.js              runtime API override
 └── favicon.png            crest favicon
 ```
@@ -214,12 +215,13 @@ public/
   clickable.
 - Requests time out after `VITE_REQUEST_TIMEOUT_MS` and turn into a retry
   message instead of hanging.
-- A guest can ask questions; only a signed-in user's answers are saved. The
-  sidebar lists saved answers newest first, and clicking one reopens it.
+- A guest can ask questions; only a signed-in user's answers are saved. Each
+  saved chat keeps every follow-up question until New chat is clicked, and the
+  sidebar reopens the whole conversation.
 - The signed-in session is restored from `localStorage` on load. An invalid
   token is discarded, and the page falls back to guest mode without an error.
 - Logging out revokes the token on the server, clears it locally, and clears
-  the visible conversation while leaving the account's history intact for the
-  next login.
+  the visible conversation while leaving the account's saved chats intact for
+  the next login.
 - The auth dialog closes on Escape or a backdrop click, traps Tab focus, locks
   page scrolling while open, and shows the server's validation message.

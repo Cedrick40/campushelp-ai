@@ -54,13 +54,37 @@ class CorpusConfig(models.Model):
         return f"{self.corpus_type} corpus for {self.university}"
 
 
+class Conversation(models.Model):
+    """A saved chat file containing one or more questions and answers."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="conversations",
+    )
+    title = models.CharField(max_length=120)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return self.title
+
+
 class ChatEntry(models.Model):
-    """One saved question and its answer, owned by a single user.
+    """One saved question and its answer inside a conversation.
 
     History is stored server-side so it survives refreshes, restarts and
     devices. A guest's messages are never written here.
     """
 
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name="entries",
+    )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -71,7 +95,7 @@ class ChatEntry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["created_at", "id"]
 
     def __str__(self):
         return self.question[:60]
